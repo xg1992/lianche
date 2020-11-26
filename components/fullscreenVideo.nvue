@@ -1,0 +1,47 @@
+<template>
+	<view class="full-view">
+		<video class="full-screen-video" id="fullScreenVideo" loop :src="$realSrc(src)" :controls="false" autoplay >
+			<cover-view class="video-mask" @click="hideVideo"></cover-view>
+		</video>
+	</view>
+</template>
+
+<script>
+	import { realSrc } from "@/common/common.js"
+	export default {
+		props: ['src','hideCtrl'],
+		data(){
+			return {
+				isplay: false
+			}
+		},
+		methods: {
+			$realSrc:realSrc,
+			hideVideo(){
+				this.$parent[this.hideCtrl] = false;
+			}
+		}
+	}
+</script>
+
+<style scoped>
+	.full-view {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 9999;
+	}
+	.full-screen-video {
+		width: 100%;
+		height: 100%;
+	}
+	.video-mask {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+	}
+</style>

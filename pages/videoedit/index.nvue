@@ -1,0 +1,57 @@
+<template>
+	<view class="content-video">
+		<videoEdit :videoPath="videoPath" :cover="query.cover" :pageHide="pageHide" @finish="finish" v-if="query"></videoEdit>
+	</view>
+</template>
+
+<script>
+	import videoEdit from '@/components/videoEdit/index'
+	const plug = uni.requireNativePlugin("Hs-ShortVideo");
+	export default {
+		name: 'videoedit',
+		data(){
+			return {
+				query: {}, // 发布时所需要的视频相关参数
+				pageHide: false,
+				videoPath: ''
+			}
+		},
+		components: {
+			videoEdit
+		},
+		onLoad(query) {
+			if(typeof query.result === 'string'){
+				this.query = JSON.parse(query.result);
+			}else{
+				this.query = query.result;
+			}
+			console.log(this.query)
+			this.videoPath = this.query.localVoideoPath;
+			console.log(this.videoPath)
+		},
+		onShow(){
+			this.pageHide = false;
+			console.log(this.pageHide)
+		},
+		onHide(){
+			this.pageHide = true;
+			console.log(this.pageHide)
+		},
+		beforeDestroy(){
+			this.pageHide = true;
+		},
+		methods: {
+			finish(res){
+				// 如果没有选择音乐，直接使用原来视频地址
+				if(res.videoPath) this.query.localVoideoPath = res.videoPath;
+				console.log(this.query)
+				uni.navigateTo({
+					url: '/pages/release/release?result=' + JSON.stringify(this.query)
+				})
+			}
+		}
+	}
+</script>
+
+<style scoped>
+</style>

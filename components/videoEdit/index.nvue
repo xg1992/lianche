@@ -1,0 +1,334 @@
+<template>
+	<view class="content-video" :style="{width:wWdith,height:wHeight}" >
+		<video id="playVideo" :src="$realSrc(videoPath)" class="videocss" :autoplay="true" :loop="true" :controls="false" :poster="cover"
+		:style="widthAndHeight2" @play="videoPlay" @error="videoError">
+			<cover-view class="cover-video" @click="clickVideo" :style="{width:wWdith,height:wHeight - footerHeight}">
+				<image class="pause-icon" src="../../static/img/index/play.png" mode="" v-if="isPause"></image>
+			</cover-view>
+			<cover-view class="goback-cover"><navigator class="goback-nav" open-type="navigateBack"><view class="goback"></view></navigator></cover-view>
+		</video>
+		<cover-view id="footer1" class="video-footer-hasnext" :style="{width:wWdith}">
+			<view class="peiyue-view"  @click="showPeiYue">
+				<image class="peiyue-img" src="../../static/music_1.png" mode=""></image>
+				<text class="peiyue-view-text">配乐</text>
+			</view>
+			<text class="next-btn" @click="finish">下一步</text>
+		</cover-view>
+		<cover-view class="cover-view-content" :style="widthAndHeight" v-if="isShowPeiYue" @click.stop="hidePeiYue">
+			<!-- 已缓存歌曲列表 -->
+			<cover-view class="content-music" :style="{width:wWdith}" v-if="isShowMusic">
+				<scroll-view class="music-scroll-view" scroll-x>
+					<view class="music-item">
+						<view class="music-img-view" @click="to">
+							<icon type="search" size="32"/>
+						</view>
+						<text class="music-name">更多</text>
+					</view>
+					<view class="music-item" v-for="(item,index) in musicList" :key="item.name" @click.stop="selectMusic(item.musicPath,index,item.id,item)">
+						<view class="music-img-view"  >
+							<image class="music-img" :class="{'active-music': playMusicIndex === index}" :src="$realSrc(item.cover)" mode=""></image>
+						</view>
+						<text class="music-name"  :class="{'active': playMusicIndex === index}">{{item.name}}</text>
+					</view>
+				</scroll-view>
+			</cover-view>
+			<!-- 音量控制 -->
+			<cover-view class="content-sound" :style="{width:wWdith}" v-if="isShowSound">
+				<view class="sound-view">
+					<text class="sound-name">原声</text>
+					<view class="slider-view"><slider :value="volume1" @change="sliderChange($event,1)" step="1" /></view>
+				</view>
+				<view class="sound-view">
+					<text class="sound-name">配乐</text>
+					<view class="slider-view"><slider :value="volume2" @change="sliderChange($event,2)" step="1" /></view>
+				</view>
+			</cover-view>
+			<cover-view class="video-footer" :style="{width:wWdith}" >
+				<text class="video-footer-text" :class="{'active': isShowMusic}" @click.stop="showModule('isShowMusic')">配乐</text>
+				<text class="video-footer-text" :class="{'active': isShowSound}" @click.stop="showModule('isShowSound')">音量</text>
+			</cover-view>
+		</cover-view>
+		<!-- 网络歌曲列表 -->
+		<cover-view class="cover-music" :style="{width:wWdith,height:wHeight}" v-if="isShowMusicSelect">
+			<musicView></musicView>
+		</cover-view>
+	</view>
+</template>
+
+<script>
+	import config from '@/config/index.js'
+	import { request } from '@/common/api.js'
+	import musicView from './music.nvue'
+	import { realSrc } from "@/common/common.js"
+	const plug = uni.requireNativePlugin("Hs-ShortVideo");
+	export default {
+		name: 'videoedit',
+		// 传值:videoPath-视频地址；cover-视频封面；pageHide-页面是否隐藏
+		props: ['videoPath','cover','pageHide'],
+		components:{
+			musicView
+		},
+		data(){
+			return {
+				wWdith: 0, // 屏幕宽度
+				wHeight: 0, // 屏幕高度
+				musicList: [], // 歌曲列表
+				isShowPeiYue: false, // 显示配乐元素
+				isShowMusic: false, // 显示歌曲列表
+				isShowSound: false, // 显示音量控制
+				playMusicIndex: -1, // 当前选中正在播放的歌曲索引
+				musicPath: '', // 选中配乐的歌曲
+				volume1: 60, // 视频原声音量
+				volume2: 60, // 音乐音量
+				footerHeight: 0,
+				isPause: false, // 视频是否暂停
+				widthAndHeight: {},
+				widthAndHeight2: {},
+				isShowMusicSelect: false
+				// query: {}, // 发布时所需要的视频相关参数
+			}
+		},
+		watch: {
+			isShowMusicSelect(val){ // 监听打开歌曲列表时暂停播放视频和音频
+				if(val){
+					if(!this.isPause) this.videoContent.pause()
+					if(this.innerAudioContext){
+						this.innerAudioContext.pause()
+					}
+				}else{
+					if(!this.isPause) this.videoContent.play()
+					if(!this.innerAudioContext){
+						this.innerAudioContext = uni.createInnerAudioContext();
+					}
+					this.getMusicList(); // 获取歌曲列表
+					this.musicPlay(); // 播放歌曲
+					this.innerAudioContext.play()
+				}
+			},
+			pageHide(val){
+				if(val){
+					if(!this.isPause) this.videoContent.pause()
+					if(this.innerAudioContext && !this.innerAudioContext.paused) this.innerAudioContext.pause()
+				}else{
+					if(!this.isPause) this.videoContent.play()
+					if(this.innerAudioContext && this.innerAudioContext.paused && this.playMusicIndex >= 0) this.innerAudioContext.play()
+				}
+			},
+			videoPath(val){
+				if(this.pageHide) this.videoContent.pause()
+			}
+		},
+		created() {
+			this.wWdith = uni.getSystemInfoSync().windowWidth;
+			this.wHeight = uni.getSystemInfoSync().windowHeight;
+			this.widthAndHeight = {
+				width: this.wWdith,
+				height: this.wHeight
+			}
+		},
+		beforeMount(){
+			this.getMusicList();
+		},
+		mounted(){
+			this.$nextTick(()=>{
+				const query = uni.createSelectorQuery().in(this);
+				query.select('#footer1').boundingClientRect(data => {
+					console.log(data.height)
+				  this.footerHeight = data.height;
+					this.widthAndHeight2 = Object.assign(this.widthAndHeight,{height: this.wHeight - data.height})
+				}).exec();
+			})
+			this.videoContent = uni.createVideoContext("playVideo")
+		},
+		beforeDestroy(){
+			// 页面销毁时移除播放器
+			if(this.innerAudioContext){
+				this.innerAudioContext.destroy()
+			}
+			// 页面销毁时清除歌曲播放地址
+			this.$store.commit('setMusicPath','')
+		},
+		methods: {
+			$realSrc:realSrc,
+			// 从缓存中获取歌曲列表
+			getMusicList(){
+				this.musicList = uni.getStorageSync('musicList') || [];
+				console.log(this.musicList)
+				if(this.innerAudioContext){
+					for(let i = 0; i < this.musicList.length; i++){
+						if(this.musicPath = this.musicList[i].musicPath){
+							this.playMusicIndex = i;
+							break;
+						}
+					}
+				}
+				// 如果没有缓存，则获取推荐歌曲
+				if(!this.musicList.length){
+					request('Video/Song/recommendSongs',{
+						number: 10
+					}).then(res=>{
+						this.musicList = res.data
+					})
+				}
+			},
+			// 显示歌曲列表或音量控制
+			showModule(param){
+				if(param === 'isShowMusic'){
+					this.isShowSound = false;
+				}else{
+					this.isShowMusic = false;
+				}
+				this[param] = true;
+			},
+			showPeiYue(){
+				this.isShowPeiYue = true;
+				this.isShowMusic = true;
+			},
+			hidePeiYue(){
+				this.isShowMusic = false;
+				this.isShowSound = false;
+				this.isShowPeiYue = false;
+			},
+			// 改变音量大小
+			sliderChange(e,type){
+				let volume = e.detail.value;
+				type === 1 ? this.volume1 = volume : this.volume2 = volume;
+				if(type === 2 && this.innerAudioContext){ // 改变音乐音量
+					this.innerAudioContext.volume = volume / 100;
+				}
+			},
+			to(){
+				// uni.navigateTo({
+				//     url: '/pages/videoedit/music'
+				// });
+				this.isShowMusicSelect = true;
+			},
+			// 选择/取消选择歌曲
+			selectMusic(musicPath='',index,id,item){
+				console.log(musicPath)
+				if(!musicPath){ // 本地路径不存在，说明是网络推荐歌曲，需要下载本地
+					this.downloadMusic(id,item)
+				}
+				if(this.innerAudioContext){
+					this.innerAudioContext.pause();
+				}
+				if(index || index === 0){
+					if(this.playMusicIndex === index){
+						this.playMusicIndex = -1; // 取消选中
+						this.musicPath = ''; // 清除选中的歌曲路径
+						this.innerAudioContext.stop(); // 终止播放
+					}else{
+						this.playMusicIndex = index; // 选中当前歌曲
+						this.musicPath = musicPath; // 保存当前歌曲路径
+						const musicPathList = uni.get
+						this.musicPlay(musicPath);
+					}
+				}
+			},
+			// 播放歌曲
+			musicPlay(musicPath=''){
+				if(!musicPath) musicPath = this.musicPath;
+				console.log(musicPath)
+				if(!musicPath) return;
+				if(!this.innerAudioContext){
+					this.innerAudioContext = uni.createInnerAudioContext();
+				}
+				this.innerAudioContext.autoplay = true;
+				this.innerAudioContext.src = musicPath;
+				this.innerAudioContext.onPlay(() => {
+					console.log('开始播放');
+				});
+				this.innerAudioContext.onError((res) => {
+					console.log(res.errMsg);
+					console.log(res.errCode);
+					if(res.errCode === -5){
+						console.log('未知错误！')
+					}
+				});
+				this.innerAudioContext.onStop(()=>{
+					console.log('播放结束');
+				})
+			},
+			downloadMusic(id,item){
+				uni.showLoading({
+					title: '歌曲加载中',
+					mask: true
+				});
+				let musicList = uni.getStorageSync('musicList') || [];
+				let url = `${config.baseUrl}Video/Song/downloadSong?songId=${id}&token=` + uni.getStorageSync('token');
+				// 下载歌曲临时文件
+				uni.downloadFile({
+					url: url,
+					success: res=>{
+						// 把临时文件保存到本地
+						uni.saveFile({
+							tempFilePath: res.tempFilePath,
+							success: res=>{
+								console.log(res.savedFilePath)
+								item.musicPath = res.savedFilePath;
+								this.musicPath = res.savedFilePath;
+								this.musicPlay(res.savedFilePath)
+								musicList.unshift(item)
+								uni.setStorage({
+									key: 'musicList',
+									data: musicList,
+									success: res=>{
+										console.log(res)
+									}
+								})
+								uni.hideLoading();
+							}
+						})
+					}
+				})
+			},
+			clickVideo(){
+				if(!this.videoContent) {
+					this.videoContent = uni.createVideoContext("playVideo")
+				}
+				if(this.isPause){
+					this.videoContent.play()
+				}else{
+					this.videoContent.pause()
+				}
+				this.isPause = !this.isPause;
+			},
+			finish(){
+				if(this.musicPath){ // 添加音乐，调用音视频合成插件
+					// #ifdef APP-PLUS
+					uni.showLoading({
+						title:'正在合成'
+					})
+					const videoPath = plus.io.convertLocalFileSystemURL(this.videoPath);
+					const musicPath = plus.io.convertLocalFileSystemURL(this.musicPath);
+					
+					plug.addMusic({
+						"video": videoPath,
+						"music": musicPath,
+						"originalVolume": this.volume1 / 100,
+						"musicVolume": this.volume2 / 100
+					}, res => {
+						if (typeof res == "string") {
+							res = JSON.parse(res)
+						}
+						console.log(res)
+						// 音视频合成成功，把视频地址返回页面，触发父元素finish事件
+						this.$emit('finish',{videoPath: res.path,cover: this.cover});
+						uni.hideLoading()
+					})
+					// #endif
+				}else{ // 不添加音乐，直接跳转发布页面
+					this.$emit('finish',{cover: this.cover});
+				}
+			},
+			videoError(err){
+				console.log(err)
+			}
+		}
+	}
+</script>
+
+<style scoped>
+@import url("./index.css");
+
+</style>

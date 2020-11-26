@@ -1,0 +1,361 @@
+<template>
+	<div>
+		<swiper class="swiper" :style="{height:`${wHeight}px`}" :current="current" :indicator-dots="false" :autoplay="false"
+		 :interval="interval" @change="currentChange">
+			<swiper-item v-for="(item,index) in list">
+				<!-- 视频组件 -->
+				<jVideo ref="videoPlay" v-if="Math.abs(current-index) <=1" :state="item.playState" :videoPath="$realSrc(item.video)"
+				 :videoHttp="$realSrc(item.video)" :boxStyle="boxStyle" :videoId="item.id" :muted="false" :currentVideoId="currentVideoId"></jVideo>
+				<!-- 视频封面 -->
+				<image class="cover" :src="$realSrc(item.cover)" :style="boxStyle" v-if="current!=index"></image>
+				<cover-view :style="boxStyle" class="panel abs" @click="togglePlay">
+					<!-- 返回 -->
+					<view class="goback" @click="back"></view>
+					<!-- 播放按钮 -->
+					<image v-if="item.playState === 'pause'" class="play-btn" src="../../static/img/index/play.png"></image>
+					<!-- 通过按钮 -->
+					<text class="btn-pass" @click="pass(item,$event)">通过</text>
+					<!-- 不通过 -->
+					<text class="btn-no" v-if="!showReason" @click="showReason=true">点击弹起拒审原因</text>
+					<!-- 不通过原因 -->
+					<view class="no-reason" @click="stop" v-if="showReason">
+						<view class="down" @click="showReason=false">
+							<text class="down-text">收起</text>
+							<image class="down-icon" src="/static/ss.png"></image>
+						</view>
+						<view class="reason-list">
+							<text class="reason-text" :class="{checked:reason.id==reasonVal}" v-for="(reason,i) in reasonItems" :key="i"
+							 @click="reasonCheck(reason,$event)">{{reason.type_name}}</text>
+						</view>
+						<view class="reason-desc" v-if="reasonVal == 13">
+							<input class="desc-input" v-model="desc" placeholder="请输入原因" placeholder-class="placeholder"/>
+							<text class="desc-btn" @click="ban">提交</text>
+						</view>
+					</view>
+				</cover-view>
+			</swiper-item>
+		</swiper>
+	</div>
+</template>
+
+<script>
+	import jVideo from '@/components/j-video/j-video.nvue';
+	import {
+		realSrc
+	} from "../../common/common.js"
+	import {
+		request
+	} from '@/common/api.js'
+	export default {
+		data() {
+			return {
+				page: 1,
+				pagesize: 20,
+				list: [],
+				current: 0,
+				currentVideoId: 0,
+				showReason: true,
+				reasonVal: -1,
+				reasonItems: [],
+				desc:'',// 其他原因
+			}
+		},
+		computed:{
+			wHeight(){
+				return uni.getSystemInfoSync().windowHeight
+			},
+			boxStyle() {
+				return{
+					height: uni.getSystemInfoSync().windowHeight + 'px',
+					width: uni.getSystemInfoSync().windowWidth + 'px'
+				}
+			}
+		},
+		components: {
+			jVideo
+		},
+		onLoad() {
+			this.getReason()
+			this.load()
+		},
+		watch: {
+			current(nVal, oVal) {
+				this.$nextTick(function() {
+					this.currentVideoId = this.list[nVal].id
+					this.list[oVal].playState = "stop"
+					this.list[nVal].playState = "play"
+					this.reasonVal = -1
+					this.desc = ''
+				})
+			}
+		},
+		methods: {
+			$realSrc: realSrc,
+			// 阻止事件冒泡
+			stop(event) {
+				event.stopPropagation();
+			},
+			// 返回
+			back(){
+				uni.navigateBack()
+			},
+			// 加载视频列表
+			load() {
+				if (this.noMore === true) return
+				let params = {
+					page: this.page,
+					pagesize: this.pagesize
+				}
+				request('Video/Video/getNoReviewed', params).then(res => {
+					if (res.data && res.data.length) {
+						let list = res.data.map((item) => {
+							return {
+								playState: 'pause',
+								...item
+							}
+						})
+						this.list = this.list.concat(list)
+						if (this.page == 1) {
+							this.$nextTick(() => {
+								this.currentVideoId = this.list[0].id
+								this.list[0].playState = "play"
+							})
+						}
+					}else{
+						uni.showToast({
+							title:'暂无待审核视频',
+							icon:'none'
+						})
+						setTimeout(()=>{
+							this.back()
+						},1500)
+					}
+				}).catch(err=>{
+					uni.showToast({
+						title:err.msg,
+						icon:'none'
+					})
+					setTimeout(()=>{
+						this.back()
+					},1500)
+				});
+			},
+			// 获取审核不通过原因
+			getReason() {
+				request('Video/Video/getAuditType', {}).then(res => {
+					this.reasonItems = res.data
+				})
+			},
+			// 视频切换
+			currentChange(e) {
+				this.current = e.detail.current
+			},
+			// 播放/暂停
+			togglePlay() {
+				if (this.showReason) {
+					this.showReason = false
+				} else {
+					if (this.list[this.current].playState === 'play') {
+						this.list[this.current].playState = 'pause'
+					} else {
+						this.list[this.current].playState = 'play'
+					}
+				}
+			},
+			// 选中未通过原因
+			reasonCheck(reason, event) {
+				this.reasonVal = reason.id
+				if(reason.type_name=="其他"){
+					
+				}else{
+					uni.showModal({
+						title: reason.type_name,
+						content: '该视频因“' + reason.type_name + '”审核不通过',
+						success: (res) => {
+							if (res.confirm) {
+								this.desc = ''
+								this.ban()
+							}
+						}
+					})
+				}
+				event.stopPropagation();
+			},
+			// 通过
+			pass(item) {
+				let params = {
+					state:2,
+					vid:this.currentVideoId
+				}
+				this.submit(params)
+			},
+			// 其他原因提交
+			ban(){
+				let params = {
+					state:3,
+					audit_type:this.reasonVal,
+					vid:this.currentVideoId,
+					audit_desc:this.desc
+				}
+				this.submit(params)
+			},
+			// 提交审核结果
+			submit(params) {
+				request('Video/Video/userCheck', params).then(res => {
+					uni.showToast({
+						title:'提交成功',
+						icon:'none'
+					})
+					if(this.current<this.list.length){
+						setTimeout(()=>{
+							this.current ++
+						},1500)
+					}
+				})
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.swiper {
+		width: 750rpx;
+	}
+
+	.cover {
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+
+	.abs {
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+
+	.panel {
+		@include fr(c, c);
+	}
+
+	.play-btn {
+		width: 128rpx;
+		height: 128rpx;
+		opacity: 0.4;
+	}
+
+	.goback {
+		position: fixed;
+		top: 80rpx;
+		left: 30rpx;
+		@include size(30rpx);
+		border-width: 4rpx;
+		border-color: #f1f1f1;
+		border-style: solid;
+		border-top-width: 0;
+		border-right-width: 0;
+		transform: rotate(45deg);
+		z-index: 99;
+	}
+
+	.btn-pass {
+		@include size(120rpx, 56rpx);
+		@include font(30rpx, #FFFFFF);
+		border-radius: 8rpx;
+		background-color: #4ACA98;
+		text-align: center;
+		line-height: 56rpx;
+		position: absolute;
+		top: 70rpx;
+		right: 30rpx;
+	}
+
+	.btn-no {
+		@include size(750rpx, 98rpx);
+		@include font(34rpx, #FFFFFF);
+		background-color: #3A3C56;
+		text-align: center;
+		line-height: 98rpx;
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		z-index:99;
+	}
+
+	.no-reason {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 750rpx;
+		background-color: rgba(36, 38, 58, .7);
+		z-index:99;
+	}
+	
+	.reason-list{
+		@include fr(s, c);
+		padding: 40rpx 46rpx;
+		flex-wrap: wrap;
+	}
+	
+	.reason-desc{
+		@include fr(b, c);
+		padding: 30rpx 46rpx;
+		padding-top: 0;
+	}
+	
+	.placeholder{
+		@include font(15px, #eeeeee);
+	}
+	
+	.desc-input{
+		height: 80rpx;
+		background-color: #2E3046;
+		border-radius: 8rpx;
+		flex: 1;
+		padding: 20rpx;
+		@include font(30rpx, #FFFFFF);
+	}
+	
+	.desc-btn{
+		@include font(30rpx, #FFFFFF);
+		background-color: #F6A804;
+		margin-left: 20rpx;
+		@include size(120rpx, 70rpx);
+		border-radius: 8rpx;
+		text-align: center;
+		line-height: 70rpx;
+	}
+
+	.reason-text {
+		@include size(192rpx, 72rpx);
+		@include font(30rpx, #FFFFFF);
+		background-color: #3A3C56;
+		border-radius: 8rpx;
+		text-align: center;
+		line-height: 72rpx;
+		margin: 12rpx;
+	}
+
+	.down {
+		position: absolute;
+		top: -64rpx;
+		right: 0;
+		@include size(120rpx, 64rpx);
+		background-color: #2E3046;
+		border-top-left-radius: 8rpx;
+		@include fr(c, c);
+
+		&-text {
+			@include font(24rpx, #ABABAB);
+		}
+
+		&-icon {
+			@include size(25rpx, 13rpx);
+			margin-left: 13rpx;
+		}
+	}
+
+	.checked {
+		background-color: #F6A804;
+	}
+</style>

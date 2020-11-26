@@ -1,0 +1,103 @@
+<template>
+	<div>
+		<shortvideo ref="short" :list="list" :noMore="noMore" @loadMore="load"></shortvideo>
+	</div>
+</template>
+<script>
+	import shortvideo from "@/components/shortvideo/shortvideo.nvue"
+	import {
+		request
+	} from '@/common/api.js'
+	export default {
+		components: {
+			shortvideo
+		},
+		data() {
+			return {
+				page: 1,
+				pageSize: 20,
+				noMore: false,
+				list: [],
+				options: {},
+				requestUrl: 'Video/Video/recommendVideos',
+			}
+		},
+		methods: {
+			load(obj) {
+				if (this.noMore === true) return
+				let params = {
+					...this.options,
+					page: this.page,
+					pagesize: this.pageSize,
+					type: 2,
+				}
+				request(this.requestUrl, params).then(res => {
+					if (res.data.list && res.data.list.length) {
+						this.list = this.list.concat(res.data.list)
+						if (this.page == 1) {
+							this.$nextTick(()=>{
+								this.list[0].playState = 'play';
+								this.list[1].playState = 'stop'; // 安卓使用视频播放插件，初始化时避免出现暂停按钮
+							})
+						}else{
+							this.$nextTick(()=>{
+								this.list[obj.k].playState = 'play';
+							})
+						}
+						this.page++
+						if (res.data.list.length < this.pageSize) {
+							this.noMore = true
+						}
+					}
+					// console.log(111111,this.list);
+				});
+			}
+		},
+		onHide() {
+			this.$nextTick(() => {
+				this.$refs['short'].onHide()
+			})
+			uni.$off('videoDel')
+		},
+		onShow() {
+			this.$nextTick(() => {
+				this.$refs.short.onShow()
+			})
+			uni.$on('videoDel',(k)=>{
+				this.list.splice(k,1)
+			})
+		},
+		onLoad(options) {
+			console.log(options);
+			this.options = options
+			if (options.act) {
+				this.requestUrl = options.act
+			}
+			this.load()
+			this.$nextTick(() => {
+				this.$refs.short.onLoad()
+			})
+			// 监听用户关注事件
+			uni.$on('follow',(res)=>{
+				let isfan = res.fanIt;
+				let uid = res.uid;
+				this.list.forEach(item=>{
+					if(item.uid === uid){
+						item.is_fans_it = isfan;
+					}
+				})
+			})
+		},
+		onReady() {
+			this.$nextTick(() => {
+				this.$refs.short.onReady()
+			})
+		},
+		onUnload() {
+			this.$refs.short.onUnload()
+			// 移除关注事件监听器
+			uni.$off('follow')
+		}
+	}
+</script>
+<style></style>

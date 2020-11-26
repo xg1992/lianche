@@ -1,0 +1,288 @@
+{
+    "name" : "链车短视频",
+    "appid" : "__UNI__EAB247B",
+    "description" : "链车短视频以汽车驾驶教练学员、汽车自媒体KOL为短视频作品生产端，学车意向者、汽车爱好者为作品消费端。汽车周边商家借助生产端粉丝名誉售卖其商品和服务。",
+    "versionName" : "1.3.0",
+    "versionCode" : 130,
+    "transformPx" : false,
+    /* 5+App特有相关 */
+    "app-plus" : {
+        "compatible" : {
+            "ignoreVersion" : true //true表示忽略版本检查提示框，HBuilderX1.9.0及以上版本支持  
+        },
+        "usingComponents" : true,
+        "ignoreVersion" : true,
+        "allowsInlineMediaPlayback" : true,
+        "nvueCompiler" : "uni-app",
+        "hardwareAccelerated" : true,
+        "splashscreen" : {
+            "alwaysShowBeforeRender" : true,
+            "waiting" : false,
+            "autoclose" : true,
+            "delay" : 0
+        },
+        "statusbar" : {
+            "immersed" : "supportedDevice",
+            "style" : "dark",
+            "background" : "#191C2F"
+        },
+        "kernel" : {
+            "ios" : "WKWebview" //或者 "WKWebview"  
+        },
+        "safearea" : {
+            "background" : "#191C2F",
+            "bottom" : {
+                "offset" : "auto"
+            }
+        },
+        /* 模块配置 */
+        "modules" : {
+            "VideoPlayer" : {},
+            "Share" : {},
+            "Maps" : {}
+        },
+        /* 应用发布信息 */
+        "distribute" : {
+            "orientation" : [ "portrait-primary" ],
+            /*应用支持的方向，portrait-primary：竖屏正方向；portrait-secondary：竖屏反方向；
+			landscape-primary：横屏正方向；landscape-secondary：横屏反方向*//* android打包配置 */
+            "android" : {
+                "permissions" : [
+                    "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_WIFI_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.CALL_PHONE\"/>",
+                    "<uses-permission android:name=\"android.permission.CHANGE_NETWORK_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.CHANGE_WIFI_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.GET_ACCOUNTS\"/>",
+                    "<uses-permission android:name=\"android.permission.INSTALL_PACKAGES\"/>",
+                    "<uses-permission android:name=\"android.permission.INTERNET\"/>",
+                    "<uses-permission android:name=\"android.permission.MODIFY_AUDIO_SETTINGS\"/>",
+                    "<uses-permission android:name=\"android.permission.MOUNT_UNMOUNT_FILESYSTEMS\"/>",
+                    "<uses-permission android:name=\"android.permission.READ_CONTACTS\"/>",
+                    "<uses-permission android:name=\"android.permission.READ_LOGS\"/>",
+                    "<uses-permission android:name=\"android.permission.READ_PHONE_STATE\"/>",
+                    "<uses-permission android:name=\"android.permission.RECORD_AUDIO\"/>",
+                    "<uses-permission android:name=\"android.permission.REQUEST_INSTALL_PACKAGES\"/>",
+                    "<uses-permission android:name=\"android.permission.VIBRATE\"/>",
+                    "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
+                    "<uses-permission android:name=\"android.permission.WRITE_CONTACTS\"/>",
+                    "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\"/>",
+                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>"
+                ],
+                "abiFilters" : [ "armeabi-v7a", "arm64-v8a", "x86" ],
+                "schemes" : "lianche"
+            },
+            /* ios打包配置 */
+            "ios" : {
+                "privacyDescription" : {
+                    "NSCameraUsageDescription" : "需要使用摄像头拍摄短视频是否允许此App获取摄像头权限？",
+                    "NSLocationAlwaysAndWhenInUseUsageDescription" : "需要获取个人位置进行附近视频推荐是否允许此App获取您的定位？",
+                    "NSPhotoLibraryUsageDescription" : "需要获取个人照片编辑头像是否允许此App获取相册权限？",
+                    "NSMicrophoneUsageDescription" : "需要使用麦克风录制音频是否允许此App获取麦克风权限？",
+                    "NSLocationWhenInUseUsageDescription" : "需要获取个人位置进行附近视频推荐是否允许此App获取您的定位？"
+                },
+                "idfa" : false,
+                "urltypes" : "lianche"
+            },
+            /* SDK配置 */
+            "sdkConfigs" : {
+                "speech" : {},
+                "ad" : {},
+                "share" : {
+                    "sina" : {
+                        "appkey" : "4261246276",
+                        "appsecret" : "37b4d910613894157117dcfb2806176a",
+                        "redirect_uri" : "https://lianche.haoshuninfo.com/html/download.html"
+                    },
+                    "weixin" : {
+                        "appid" : "wx9978f1b704181279",
+                        "UniversalLinks" : "https://lianche.haoshuninfo.com/app/"
+                    }
+                },
+                "maps" : {
+                    "amap" : {
+                        "appkey_ios" : "2434d5b91bb925752bf42da7cc86196d",
+                        "appkey_android" : "878d440ef3922eb2b1543c0a7e6c3dfa"
+                    }
+                }
+            },
+            "icons" : {
+                "android" : {
+                    "hdpi" : "unpackage/res/icons/72x72.png",
+                    "xhdpi" : "unpackage/res/icons/96x96.png",
+                    "xxhdpi" : "unpackage/res/icons/144x144.png",
+                    "xxxhdpi" : "unpackage/res/icons/192x192.png"
+                },
+                "ios" : {
+                    "appstore" : "unpackage/res/icons/1024x1024.png",
+                    "ipad" : {
+                        "app" : "unpackage/res/icons/76x76.png",
+                        "app@2x" : "unpackage/res/icons/152x152.png",
+                        "notification" : "unpackage/res/icons/20x20.png",
+                        "notification@2x" : "unpackage/res/icons/40x40.png",
+                        "proapp@2x" : "unpackage/res/icons/167x167.png",
+                        "settings" : "unpackage/res/icons/29x29.png",
+                        "settings@2x" : "unpackage/res/icons/58x58.png",
+                        "spotlight" : "unpackage/res/icons/40x40.png",
+                        "spotlight@2x" : "unpackage/res/icons/80x80.png"
+                    },
+                    "iphone" : {
+                        "app@2x" : "unpackage/res/icons/120x120.png",
+                        "app@3x" : "unpackage/res/icons/180x180.png",
+                        "notification@2x" : "unpackage/res/icons/40x40.png",
+                        "notification@3x" : "unpackage/res/icons/60x60.png",
+                        "settings@2x" : "unpackage/res/icons/58x58.png",
+                        "settings@3x" : "unpackage/res/icons/87x87.png",
+                        "spotlight@2x" : "unpackage/res/icons/80x80.png",
+                        "spotlight@3x" : "unpackage/res/icons/120x120.png"
+                    }
+                }
+            },
+            "splashscreen" : {
+                "android" : {
+                    "hdpi" : "unpackage/res/loadimg/android/launch.9.png",
+                    "xhdpi" : "unpackage/res/loadimg/android/launch.9.png",
+                    "xxhdpi" : "unpackage/res/loadimg/android/launch.9.png",
+                    "xxxhdpi" : "unpackage/res/loadimg/android/launch.9.png"
+                },
+                "ios" : {
+                    "iphone" : {
+                        "portrait-896h@3x" : "unpackage/res/loadimg/ios/Default-2688h.png",
+                        "portrait-896h@2x" : "unpackage/res/loadimg/ios/Default-1792h.png",
+                        "iphonex" : "unpackage/res/loadimg/ios/Default-2436h.png",
+                        "retina55" : "unpackage/res/loadimg/ios/Default-736h.png",
+                        "retina47" : "unpackage/res/loadimg/ios/Default-667h.png",
+                        "retina40" : "unpackage/res/loadimg/ios/Default-568h@2x~iphone.png",
+                        "retina35" : "unpackage/res/loadimg/ios/Default@2x~iphone.png"
+                    }
+                },
+                "iosStyle" : "common"
+            }
+        },
+        "nativePlugins" : {
+            "Hs-MobMessage" : {
+                "MOBAppKey" : "2e5cc9ba131a9",
+                "MOBAppSecret" : "bc33d39d504def72be11219a7d03f1cd",
+                "__plugin_info__" : {
+                    "name" : "Hs-MobMessage",
+                    "description" : " mob 短信验证插件",
+                    "platforms" : "Android,iOS",
+                    "url" : "",
+                    "android_package_name" : "",
+                    "ios_bundle_id" : "",
+                    "isCloud" : false,
+                    "bought" : -1,
+                    "pid" : "",
+                    "parameters" : {
+                        "MOBAppKey" : {
+                            "des" : "MOBAppKey",
+                            "key" : "MOBAppKey",
+                            "value" : ""
+                        },
+                        "MOBAppSecret" : {
+                            "des" : "MOBAppSecret",
+                            "key" : "MOBAppSecret",
+                            "value" : ""
+                        }
+                    }
+                }
+            },
+            "Hs-Video" : {
+                "__plugin_info__" : {
+                    "name" : "Hs-Video 视频播放插件",
+                    "description" : "视频播放插件",
+                    "platforms" : "Android,iOS",
+                    "url" : "https://ext.dcloud.net.cn/plugin?id=2761",
+                    "android_package_name" : "com.lianche.shortvideo",
+                    "ios_bundle_id" : "com.lianche.shortvideo",
+                    "isCloud" : true,
+                    "bought" : 1,
+                    "pid" : "2761",
+                    "parameters" : {}
+                }
+            },
+            "Hs-ShortVideo" : {
+                "__plugin_info__" : {
+                    "name" : "自研短视频(Android和iOS)， 拍摄、回删、对焦、BGM、压缩、裁剪等",
+                    "description" : "自研短视频 ios+android，含美颜、裁剪、BGM等【不依赖三方短视频sdk，无额外授权费用】",
+                    "platforms" : "Android,iOS",
+                    "url" : "https://ext.dcloud.net.cn/plugin?id=2165",
+                    "android_package_name" : "com.lianche.shortvideo",
+                    "ios_bundle_id" : "com.lianche.shortvideo",
+                    "isCloud" : true,
+                    "bought" : 1,
+                    "pid" : "2165",
+                    "parameters" : {}
+                }
+            }
+        },
+        "uniStatistics" : {
+            "enable" : true
+        },
+        "compilerVersion" : 3
+    },
+    /* 快应用特有相关 */
+    "quickapp" : {},
+    /* 小程序特有相关 */
+    "mp-weixin" : {
+        "appid" : "wx206541411464048d",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true
+        },
+        "usingComponents" : true,
+        "uniStatistics" : {
+            "enable" : true
+        }
+    },
+    "mp-alipay" : {
+        "usingComponents" : true,
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "mp-baidu" : {
+        "usingComponents" : true,
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "mp-toutiao" : {
+        "usingComponents" : true,
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "h5" : {
+        "uniStatistics" : {
+            "enable" : true
+        },
+        "devServer" : {
+            "https" : false,
+            "disableHostCheck" : true,
+            "port" : 3366,
+            "proxy" : {
+                "/api" : {
+                    "target" : "https://lianche.haoshuninfo.com/",
+                    "changOrigin" : true,
+                    "pathRewrite" : {
+                        "^/api" : "/"
+                    }
+                }
+            }
+        },
+        "router" : {
+            "base" : "/h5/share/"
+        }
+    },
+    "mp-qq" : {
+        "uniStatistics" : {
+            "enable" : false
+        }
+    },
+    "uniStatistics" : {
+        "enable" : false
+    }
+}

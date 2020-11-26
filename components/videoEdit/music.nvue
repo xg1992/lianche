@@ -1,0 +1,242 @@
+<template>
+	<view class="music-body" :style="{height: $parent.wHeight}">
+		<text class="close-cover" @click="$parent.isShowMusicSelect = false;">+</text>
+		<view class="page-title">
+			<text>选择音乐</text>
+		</view>
+		<view class="search-view">
+			<icon class="icon-search" type="search" size="20"/>
+			<input v-model="searchText" class="search-input" type="text" value="" placeholder="搜索歌曲名称" @input="searchMusic(1)" />
+		</view>
+		<scroll-view :scroll-y="true" class="music-list" @scrolltolower="getMore" v-if="!isSearch">
+			<view class="music-title">推荐</view>
+			<musiclist :list="recommendList" :playid="playid" type="1" :indexType="indexType"></musiclist>
+			<view class="music-title" style="margin-top: 15px;">最新曲单</view>
+			<musiclist :list="newMusicList" :playid="playid" type="2" :indexType="indexType"></musiclist>
+		</scroll-view>
+		<scroll-view :scroll-y="true" class="music-list" v-if="isSearch">
+			<view class="music-title">搜索曲单</view>
+			<musiclist :list="searchMusicList" :playid="playid" type="3" :indexType="indexType"></musiclist>
+		</scroll-view>
+	</view>
+</template>
+
+<script>
+import config from '@/config/index.js'
+import {
+	request,
+	qx
+} from '@/common/api.js'
+import musiclist from './musiclist.nvue'
+export default {
+	name: 'music',
+	components: {
+		musiclist
+	},
+	data(){
+		return {
+			recommendList: [], // 推荐曲单
+			newMusicList: [], // 最新曲单
+			searchMusicList: [], // 搜索曲单
+			page: 1, // 分页页码
+			pagesize: 20, // 每页获取数据量
+			searchText: '', // 输入的搜索关键字
+			isSearch: false,
+			searchPage: 1, // 搜索的分页页码
+			searchPagesize: 20, // 搜索的分页数量
+			isPaused: false, // 控制播放和暂停按钮切换
+			playid: null, // 当前播放歌曲的id
+			indexType: 1, // 当前播放歌曲所在分类，默认1-推荐、2-最新曲单、3-搜索曲单
+			isLast: false, // 没有更多数据了
+			
+		}
+	},
+	created(){
+		this.getRecommendList();
+		this.getNewMusicList(1);
+	},
+	destroyed(){
+		// 推出页面时移除播放器
+		if(this.innerAudioContext){
+			this.innerAudioContext.destroy()
+		}
+	},
+	methods: {
+		// 滚动到底部获取更多
+		getMore() {
+			if(this.isSearch){
+				this.searchMusic(this.searchPage)
+			}else{
+				this.getNewMusicList()
+			}
+		},
+		// 获取推荐曲单
+		getRecommendList(){
+			request('Video/Song/recommendSongs',{
+				number: 10
+			}).then(res=>{
+				this.$set(this.recommendList,0,res.data)
+			})
+		},
+		// 获取最新曲单
+		getNewMusicList(page){
+			if(this.isLast){
+				return ;
+			}
+			if(page){
+				this.page = page;
+			}else{
+				page = this.page;
+			}
+			request('Video/Song/newSongs',{
+				page: this.page,
+				pagesize: this.pagesize,
+			}).then(res=>{
+				if(res.data.length){
+					this.page++;
+					this.$set(this.newMusicList,this.newMusicList.length,res.data);
+				}
+				if(res.data.length < this.pagesize){ // 如果返回的数据比分页数量少，说明已经是最后一页了
+					this.$nextTick(()=>{
+						this.isLast = true;
+					})
+				}
+			})
+		},
+		// 歌曲搜索
+		searchMusic(page){
+			clearTimeout(this.searching)
+			let fun = ()=>{
+				if(!this.searchText.length){
+					this.isSearch = false;
+					return false;
+				}else if(!this.isSearch){ // 如果不是搜索，开始搜索时隐藏最后一页提示
+					this.isLast = false;
+				}
+				if(this.isLast && page !== 1){
+					return ;
+				}
+				request('Video/Song/searchSong',{
+					name: this.searchText,
+					page: page,
+					pagesize: this.searchPagesize,
+				}).then(res=>{
+					this.isSearch = true;
+					if(page === 1){ // 重新搜索先清空已有的搜索结果
+						this.searchMusicList = [];
+					}
+					if(res.data.length){
+						this.searchPage++;
+						this.$set(this.searchMusicList,this.searchMusicList.length,res.data)
+					}
+					if(res.data.length < this.searchPagesize){
+						this.$nextTick(()=>{
+							this.isLast = true;
+						})
+					}
+				}).catch((err)=>{
+					console.log(err)
+				})
+			};
+			this.searching = setTimeout(()=>{
+				fun();
+				this.searching = null;
+			},1500)
+		},
+		// 歌曲播放，musiclist组件内调用
+		playAudio(id,type){
+			let url = `${config.baseUrl}Video/Song/downloadSong?songId=${id}&token=` + uni.getStorageSync('token');
+			console.log(url)
+			try {
+				// 是否暂停或继续正在播放的歌曲
+				if(this.innerAudioContext && this.playid && this.playid === id && type == this.indexType){
+					if(this.innerAudioContext.paused){
+						this.isPaused = false; // 切换图标为暂停
+						this.innerAudioContext.play()
+					}else{
+						this.isPaused = true; // 切换图标为播放
+						this.innerAudioContext.pause();
+					}
+				}else{ // 播放新歌曲
+					// 播放器是否已创建
+					if(this.innerAudioContext){
+						this.innerAudioContext.destroy()
+					}
+					this.innerAudioContext = uni.createInnerAudioContext();
+					this.innerAudioContext.autoplay = true;
+					this.isPaused = false;
+					this.playid = id; // 保存正在播放的歌曲id，判断暂停/继续播放、暂停/播放图标切换
+					this.indexType = type; // 保存正在播放的歌曲所在分类，判断显示暂停/播放图标
+					this.innerAudioContext.src = url;
+					this.innerAudioContext.onPlay(() => {
+						console.log('开始播放');
+					});
+					this.innerAudioContext.onError((res) => {
+						console.log(res.errMsg);
+						console.log(res.errCode);
+					});
+					this.innerAudioContext.onStop(()=>{
+						console.log('播放结束');
+					})
+				}
+			}catch(err){
+				console.log(err)
+			}
+		},
+		stop(){
+			return ;
+		}
+	}
+}
+</script>
+
+<style scoped>
+
+.music-body {
+	background-color: #FFFFFF;
+	color: #333;
+	padding: 30rpx;
+	padding-top: 60rpx;
+}
+.page-title {
+	align-items: center;
+	justify-content: center;
+	padding-bottom: 30rpx;
+}
+.search-view {
+	height: 80rpx;
+	padding: 0 15px;
+	align-items: center;
+	justify-content: flex-start;
+	flex-direction: row;
+	background-color: #F3F3F3;
+	border-radius: 16rpx;
+	z-index: 999;
+}
+.icon-search {
+	width: 60rpx;
+}
+.search-input {
+	height: 80rpx;
+	flex: 1;
+	color: #191C2F;
+}
+.music-list {
+	padding-top: 0;
+	flex: 1;
+}
+.music-title {
+	margin-top: 60rpx;
+	font-size: 16px;
+	color: #333;
+}
+.close-cover {
+	position: fixed;
+	top: 60rpx;
+	left: 30rpx;
+	width: 60rpx;
+	height: 60rpx;
+	font-size: 60rpx;
+	transform: rotate(45deg);
+}
+</style>

@@ -1,0 +1,154 @@
+
+.goback-cover {
+	position: fixed;
+	top: 70rpx;
+	left: 40rpx;
+	z-index: 99999;
+}
+.goback-nav {
+	padding: 20rpx;
+}
+.goback {
+	margin-left: 10rpx;
+	width: 40rpx;
+	height: 40rpx;
+	border-width: 2px;
+	border-color: #f1f1f1;
+	border-style: solid;
+	border-top-width: 0;
+	border-right-width: 0;
+	transform: rotate(45deg);
+	z-index: 99999;
+}
+.content-video {
+	position: relative;
+	background-color: #3F536E;
+}
+.cover-video {
+	position: fixed;
+	top: 0;
+	left: 0;
+	justify-content: center;
+	align-items: center;
+	z-index: 9;
+}
+.pause-icon {
+	width: 160rpx;
+	height: 160rpx;
+	opacity: .3;
+}
+.video-footer {
+	position: fixed;
+	left: 0;
+	bottom: 0;
+	height: 100rpx;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	background-color: #191C2F;
+	z-index: 999;
+}
+.video-footer-hasnext {
+	position: fixed;
+	left: 0;
+	bottom: 0;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	height: 200rpx;
+	background-color: #191C2F;
+}
+.next-btn {
+	width: 140rpx;
+	height: 55rpx;
+	line-height: 55rpx;
+	font-size: 24rpx;
+	text-align: center;
+	color: #fff;
+	background-color: #F6A704;
+	border-radius: 8rpx;
+	margin-right: 40rpx;
+}
+.peiyue-view {
+	padding: 30rpx 50rpx;
+}
+.peiyue-img {
+	width: 47rpx;
+	height: 49rpx;
+	margin-bottom: 20rpx;
+}
+.peiyue-view-text {
+	font-size: 28rpx;
+	color: #fff;
+}
+.video-footer-text {
+	flex: 1;
+	text-align: center;
+	color: #fff;
+}
+.content-music, .content-sound {
+	flex-direction: row;
+	position: fixed;
+	left: 0;
+	bottom: 100rpx;
+	background-color: #191C2F;
+	z-index: 99999999;
+	padding: 15px;
+}
+.content-sound {
+	flex-direction: column;
+}
+.music-scroll-view {
+	flex-direction: row;
+}
+.music-item {
+	flex-direction: column;
+	width: 147rpx;
+	margin-right: 10px;
+}
+.music-img-view {
+	width: 147rpx;
+	height: 147rpx;
+	background-color: #8788A3;
+	justify-content: center;
+	align-items: center;
+	border-radius: 8rpx;
+}
+.active {
+	color: orange;
+}
+.music-img {
+	width: 147rpx;
+	height: 147rpx;
+}
+.music-name {
+	text-align: center;
+	padding-top: 10px;
+	color: #dfdfdf;
+	font-size: 24rpx;
+}
+.active-music {
+	border-width: 1px;
+	border-style: solid;
+	border-color: orange;
+}
+.sound-view {
+	flex-direction: row;
+	align-items: center;
+}
+.sound-name {
+	width: 90rpx;
+	color: #dfdfdf;
+}
+.slider-view {
+	flex: 1;
+}
+.cover-view-content {
+	position: fixed;
+}
+.cover-music {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 999999;
+}

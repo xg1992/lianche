@@ -1,0 +1,59 @@
+<template>
+	<cover-view class="c-container" :style="style">
+		<div class="c-panel">
+			<div class="header">
+				<text class="header-title">1314条评论</text>
+				<image class="btn-close" src="../../static/close_icon.png"></image>
+			</div>
+			<list class="list">
+				<cell class="item">
+					
+				</cell>
+			</list>
+		</div>
+	</cover-view>
+</template>
+
+<script>
+	export default{
+		data(){
+			return{
+				
+			}
+		},
+		props:{
+			list:{
+				type:Object,
+				default:[]
+			}
+		},
+		computed:{
+			style(){
+				return {
+					// height:`${uni.getSystemInfoSync().windowHeight}px`,
+					// backgroundColor:'rgba(255, 255, 255, 0)'
+				}
+			}
+		},
+		created() {
+			
+		}
+	}
+</script>
+
+<style lang="scss">
+	.c-container{
+		position: relative;
+		height: 1083rpx;
+		width: 750rpx;
+	}
+	.c-panel{
+		position: absolute;
+		bottom: 0;
+		height: 1083rpx;
+		width: 750rpx;
+		border-top-left-radius: 16rpx;
+		border-top-right-radius: 16rpx;
+		background-color: #FFFFFF;
+	}
+</style>

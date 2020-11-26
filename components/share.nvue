@@ -1,0 +1,192 @@
+<template>
+	<view id="shareView" class="share-body" :style="wWidth" v-if="showShare">
+		<view class="share-mask" :style="{bottom: shareHeight + 'px'}" @click="openShare"></view>
+		<view class="share-title" >
+			<text class="title-text">分享到</text>
+		</view>
+		<scroll-view class="scroll-view_H" scroll-x="true" scroll-left="0">
+			<view class="scroll-view-item_H" v-for="(item, index) in fenxiang" @click="actshare(index)">
+				<image class="view-item_H_image" :src="item.src"></image>
+				<text class="view-item_H_text">{{ item.name }}</text>
+			</view>
+		</scroll-view>
+		
+		<!-- <operation :videoInfo="dataList[k]"></operation> -->
+		
+		<view class="line"></view>
+		<view class="grace-btdialog-btns link-top" style="text-align:center;justify-content: center;">
+			<text class="grace-btdialog-btn grace-blue" style=" text-align: center; color:#666666" @click="openShare">取消</text>
+		</view>
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				fenxiang: [{
+						src: '/static/fenxiang1.png',
+						name: '微信'
+					},
+					{
+						src: '/static/fenxiang2.png',
+						name: '朋友圈'
+					},
+					/*{ src: '/static/fenxiang5.png', name: '微博' },
+					{ src: '/static/fenxiang3.png', name: 'QQ' },
+					{ src: '/static/fenxiang4.png', name: 'QQ空间' }*/
+				],
+				wWidth:{ width: uni.getSystemInfoSync().windowWidth + 'px'},
+				wHeight: uni.getSystemInfoSync().windowHeight,
+				shareHeight: 0,
+				showShare: false,
+			};
+		},
+		props: {
+			options: {
+				type: Object
+			},
+		},
+		watch: {
+			showShare(val){
+				if(val) {
+					this.$nextTick(()=>{
+						this.setMaskHeight();
+					})
+				}
+			}
+		},
+		methods: {
+			openShare(){
+				this.showShare = !this.showShare;
+			},
+			actshare(idx){
+				let all = {
+					provider: '',
+					scene: ''
+				};
+				console.log(this.shareUrl + '?'+ this.paramsName +'='+ this.paramsValue)
+				if (idx == 0) {
+					all.provider = 'weixin';
+					all.scene = 'WXSceneSession';
+				}
+				if (idx == 1) {
+					all.provider = 'weixin';
+					all.scene = 'WXSenceTimeline';
+				}
+				if (idx == 2) {
+					all.provider = 'sinaweibo';
+					all.scene = '';
+				}
+				if (idx == 3) {
+					all.provider = 'qq';
+					all.scene = '';
+				}
+				if (idx == 4) {
+					all.provider = 'qq';
+					all.scene = '';
+				}
+				// console.log(all);
+				let that = this;
+				let {
+					shareUrl,
+					params,
+					summary,
+					title,
+					imageUrl,
+				} = this.options;
+				let url = 'https://lianche.haoshuninfo.com/h5/share/index.html#/' + shareUrl + '?';
+				Object.keys(params).forEach((key,i)=>{
+					if(i > 0){
+						url += `&`
+					}
+					url += `${key}=${params[key]}`
+				})
+				uni.share({
+					provider: all.provider,
+					scene: all.scene,
+					href: url,
+					title: title,
+					summary: summary,
+					imageUrl: imageUrl || '../../static/logo.png',
+					success: function(res) {
+						console.log('success:' + JSON.stringify(res));
+						// type 分享类型，0:其他，1：短视频   channel 分享渠道,0:其他，1:微信好友或群，2:微信朋友圈, 3:微博, 4:qq, 5:qq空间
+					},
+					fail: function(err) {
+						console.log('fail:' + JSON.stringify(err));
+					}
+				});
+			},
+			setMaskHeight(){
+				let query = uni.createSelectorQuery().in(this);
+				query.select('#shareView').boundingClientRect(data => {
+					this.shareHeight = data.height;
+					console.log(this.shareHeight);
+				}).exec();
+			}
+		}
+	}
+</script>
+<style>
+	@import '@/graceUI/graceWeex.css';
+</style>
+<style scoped>
+	
+/* xg 2020.9.4 */
+.share-body {
+	border-top-right-radius: 16rpx;
+	border-top-left-radius: 16rpx;
+	position: fixed;
+	color: #333;
+	bottom:0;
+	z-index:99;
+	background-color:#fff;
+	display: flex;
+	flex-direction: column;
+}
+.share-title {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding-top: 30rpx;
+	color: #000000;
+}
+.scroll-view_H {
+	display: flex;
+	align-items: center;
+	flex-direction: row !important;
+	justify-content: space-between;
+	padding: 10px;
+}
+.view-item_H_image {
+	width: 50px;
+	height: 50px;
+	
+	/* border-radius: 25px; */
+}
+.scroll-view-item_H {
+	float: left;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	width: 300rpx;
+	padding: 5px 10px;
+	text-align: center;
+}
+.view-item_H_text {
+	font-size: 12px;
+	text-align: center;
+	margin-top: 20rpx;
+	color: #333;
+}
+
+.title-text {}
+.share-mask {
+	position: absolute;
+	left: 0;
+	width: 100%;
+	height: 1000rpx;
+}
+</style>

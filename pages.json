@@ -1,0 +1,794 @@
+{
+	//#ifdef APP-PLUS
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		
+		{
+			"path": "pages/shortvideo/shortvideo",
+			"style": {
+				"navigationBarTitleText": "",
+				"bounce": "none",
+				"titleNView": false,
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/comment/comment",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "transparent",
+				"app-plus": {
+					"animationType": "fade-in",
+					"background": "transparent",
+					"popGesture": "none",
+					"softinputMode":"adjustResize"
+				}
+			}
+		},
+        {
+            "path": "pages/subnvue/yonghufuwuxieyi",
+            "style": {
+                "navigationBarTitleText": "用户服务协议",
+                "bounce": "none",
+                "titleNView": false,
+                "navigationStyle": "custom"
+            }
+        },
+        {
+            "path": "pages/subnvue/yinsizhengce",
+            "style": {
+                "navigationBarTitleText": "隐私政策",
+                "bounce": "none",
+                "titleNView": false,
+                "navigationStyle": "custom"
+            }
+        },
+		{
+			"path": "pages/subnvue/appxieyi",
+			"style": {
+				"navigationBarTitleText": "个人信息保护指引",
+				"bounce": "none",
+				"titleNView": false,
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/subnvue/yonghufuwuxieyi",
+			"style": {
+				"navigationBarTitleText": "用户服务协议",
+				"bounce": "none",
+				"titleNView": false,
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/subnvue/yinsizhengce",
+			"style": {
+				"navigationBarTitleText": "隐私政策",
+				"bounce": "none",
+				"titleNView": false,
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/search/index",
+			"style": {
+				"navigationBarTitleText": "搜索",
+				"enablePullDownRefresh": true,
+				"app-plus": {
+					"softinputNavBar": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/similar/topic",
+			"style": {
+				"navigationBarTitleText": "话题",
+				"enablePullDownRefresh": true
+			}
+		},
+		/* {
+			"path": "pages/shortvideo/shortvideo",
+			"style": {
+				"navigationBarTitleText": "SubNvue",
+				"app-plus": {
+					"titleNView": {
+						"type": "transparent"
+					},
+                    "subNVues":[{  
+                        "id": "video_mask_haha", // 唯一标识  
+                        "path": "pages/shortvideo/subnvue/autoUpdate", // 应用检测更新  
+                        "style": {  
+                            "position": "absolute",
+                            "bottom": "30px",
+                            "left": "0",
+                            "width": "530px",
+                            "height": "810px",
+                            "background": "transparent"
+                        }  
+                    }]  
+				}
+			}
+		}, */
+		{
+			"path": "pages/start/start",
+			"style": {
+				"navigationBarTitleText": "",
+				"bounce": "none",
+				"titleNView": false,
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/update/update",
+			"style": {
+				"navigationBarTitleText": "应用更新",
+				"bounce": "none"
+			}
+		},{
+			"path": "pages/update/popup",
+			"style": {
+				"navigationStyle": "custom",
+				"backgroundColor": "transparent",
+				"app-plus": {
+					"animationType": "fade-in",
+					"background": "transparent",
+					"popGesture": "none",
+					"softinputMode":"adjustResize"
+				}
+			}
+		}, {
+			"path": "pages/dynamic/dynamic",
+			"style": {
+				"navigationBarTitleText": "动态",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/my",
+			"style": {
+				"navigationBarTitleText": "我的",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/my/school",
+			"style": {
+				"navigationBarTitleText": "我的驾校"
+			}
+		}, {
+			"path": "pages/release/release",
+			"style": {
+				"navigationBarTitleText": "发布",
+				"app-plus": {
+
+				}
+			}
+		}, {
+			"path": "pages/appointment/appointment",
+			"style": {
+				"navigationBarTitleText": "预约",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/shortvideo/follows",
+			"style": {
+				"navigationBarTitleText": "关注",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/homepage/homepage",
+			"style": {
+				"navigationBarTitleText": "主页",
+				"enablePullDownRefresh": true,
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"text": "分享",
+							"width": "auto",
+							"fontSize": "28upx",
+							"float": "right"
+						}]
+					}
+				}
+			}
+		}, {
+			"path": "pages/homepage/welfare",
+			"style": {
+				"navigationBarTitleText": "福利橱窗",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/information",
+			"style": {
+				"navigationBarTitleText": "个人信息",
+				"app-plus": {
+
+				}
+			}
+		}, {
+			"path": "pages/my/drivers_school",
+			"style": {
+				"navigationBarTitleText": "我的驾校"
+			}
+		}, {
+			"path": "pages/my/my_works",
+			"style": {
+				"navigationBarTitleText": "我的作品",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/my_learning",
+			"style": {
+				"navigationBarTitleText": "学习进度",
+				"enablePullDownRefresh": true
+			}
+		},{
+			"path": "pages/my/examine",
+			"style": {
+				"navigationBarTitleText": "视频审核",
+				"enablePullDownRefresh": false,
+				"disableScroll":true,
+				"app-plus": {
+					"titleNView": false
+				}
+			}
+		}, {
+			"path": "pages/my/exam_info",
+			"style": {
+				"navigationBarTitleText": "约考信息"
+			}
+		}, {
+			"path": "pages/my/news",
+			"style": {
+				"navigationBarTitleText": "消息",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/my_information",
+			"style": {
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/about",
+			"style": {
+				"navigationBarTitleText": "关于我们"
+			}
+		}, {
+			"path": "pages/my/synopsis",
+			"style": {
+				"navigationBarTitleText": "简介"
+			}
+		}, {
+			"path": "pages/my/fun_introduce",
+			"style": {
+				"navigationBarTitleText": "功能介绍"
+			}
+		}, {
+			"path": "pages/my/question",
+			"style": {
+				"navigationBarTitleText": "常见问题"
+			}
+		}, {
+			"path": "pages/my/opinion",
+			"style": {
+				"navigationBarTitleText": "意见反馈"
+			}
+		}, {
+			"path": "pages/my/Invitation",
+			"style": {
+				"navigationBarTitleText": "邀请",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"type": "none",
+							"color": "#FFFFFF",
+							"text": "规则 ",
+							"fontSize": "15px"
+						}]
+					}
+				}
+			}
+		}, {
+			"path": "pages/my/invitation_code",
+			"style": {
+				"navigationBarTitleText": "填写邀请码"
+			}
+		}, {
+			"path": "pages/my/record",
+			"style": {
+				"navigationBarTitleText": "预约记录",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/record_detail",
+			"style": {
+				"navigationBarTitleText": "预约详情"
+			}
+		}, {
+			"path": "pages/my/account",
+			"style": {
+				"navigationBarTitleText": "账户",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"text": "佣金说明",
+							"width": "auto",
+							"fontSize": "28upx",
+							"float": "right"
+						}]
+					}
+				}
+			}
+		}, {
+			"path": "pages/my/obtain_bonus",
+			"style": {
+				"navigationBarTitleText": "获取奖励金"
+			}
+		}, {
+			"path": "pages/my/extract",
+			"style": {
+				"navigationBarTitleText": "提现"
+			}
+		}, {
+			"path": "pages/video/video",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": {
+						"type": "transparent"
+					}
+				}
+			}
+		}, {
+			"path": "pages/my/coach/appointment",
+			"style": {
+				"navigationBarTitleText": "我的排班"
+			}
+		}, {
+			"path": "pages/my/coach/ment_detail",
+			"style": {
+				"navigationBarTitleText": "预约详情",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/coach/speed",
+			"style": {
+				"navigationBarTitleText": "学员笔记",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/coach/students",
+			"style": {
+				"navigationBarTitleText": "教学学员",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/coach/student_detail",
+			"style": {
+				"navigationBarTitleText": "学员详情",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/coach/coach_list",
+			"style": {
+				"navigationBarTitleText": "分部教练",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/coach/coach_detail",
+			"style": {
+				"navigationBarTitleText": "教练详情",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/coach/Scheduling",
+			"style": {
+				"navigationBarTitleText": "教学排班",
+				"enablePullDownRefresh": true,
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"type": "none",
+							"color": "#B3B3BB",
+							"text": "添加",
+							"fontSize": "15px"
+						}]
+					}
+				}
+			}
+		}, {
+			"path": "pages/my/coach/Scheduling_detail",
+			"style": {
+				"navigationBarTitleText": "排班详情",
+				"enablePullDownRefresh": true,
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"type": "none",
+							"color": "#B3B3BB",
+							"text": "编辑",
+							"fontSize": "15px"
+						}]
+					}
+				}
+			}
+		}, {
+			"path": "pages/my/coach/Scheduling_add",
+			"style": {
+				"navigationBarTitleText": "添加排班",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"type": "none",
+							"color": "#B3B3BB",
+							"text": "保存",
+							"fontSize": "15px"
+						}]
+					}
+				}
+			}
+		}, {
+			"path": "pages/my/coach/list",
+			"style": {
+				"navigationBarTitleText": ""
+
+			}
+		}, {
+			"path": "pages/my/coach/Scheduling_edit",
+			"style": {
+				"navigationBarTitleText": "编辑排班",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"type": "none",
+							"color": "#B3B3BB",
+							"text": "保存",
+							"fontSize": "15px"
+						}]
+					}
+				}
+			}
+		}, {
+			"path": "pages/my/coach/students_speed",
+			"style": {
+				"navigationBarTitleText": "学员进度",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/coach/address/list",
+			"style": {
+				"navigationBarTitleText": "我的训练场",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/my/coach/address/edit",
+			"style": {
+				"navigationBarTitleText": "添加训练场",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"type": "none",
+							"color": "#B3B3BB",
+							"text": "删除",
+							"fontSize": "15px"
+						}]
+					}
+				}
+			}
+		}, {
+			"path": "pages/my/coach/address/map",
+			"style": {
+				"navigationBarTitleText": "地图",
+				"disableScroll": true,
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": false
+				}
+			}
+		}, {
+			"path": "pages/my/question_detail",
+			"style": {
+				"navigationBarTitleText": "问题详情"
+			}
+		}, {
+			"path": "pages/similar/similar",
+			"style": {
+				"navigationBarTitleText": "话题",
+				"enablePullDownRefresh": true
+			}
+		}, {
+			"path": "pages/verification/coach",
+			"style": {
+				"navigationBarTitleText": "教练认证"
+			}
+		}, {
+			"path": "pages/appointment/yiqingyuyue",
+			"style": {
+				"navigationBarTitleText": "预约"
+				/* ,
+								"enablePullDownRefresh": true */
+			}
+		}, {
+			"path": "pages/my/report",
+			"style": {
+				"navigationBarTitleText": "举报"
+			}
+		}, {
+			"path": "pages/my/set",
+			"style": {
+				"navigationBarTitleText": "设置"
+			}
+		}, {
+			"path": "pages/public/error",
+			"style": {
+				"navigationBarTitleText": "",
+				"disableScroll": true,
+				"app-plus": {
+					"animationType": "none"
+				}
+			}
+		}, {
+			"path": "pages/videoedit/index",
+			"style": {
+				"navigationBarTitleText": "视频剪辑",
+				"disableScroll": true,
+				"transparentTitle": "always",
+				"app-plus": {
+					"animationType": "none"
+				}
+			}
+		}, {
+			"path": "pages/my/discount/discount_manage",
+			"style": {
+				"navigationBarTitleText": "优惠券管理"
+			}
+		}, {
+			"path": "pages/my/discount/detail",
+			"style": {
+				"navigationBarTitleText": "优惠券详情"
+			}
+		}, {
+			"path": "pages/my/discount/rule_detail",
+			"style": {
+				"navigationBarTitleText": "优惠券使用规则"
+			}
+		}, {
+			"path": "pages/my/discount/index",
+			"style": {
+				"navigationBarTitleText": "我的优惠券"
+			}
+		}, {
+			"path": "pages/my/discount/verification/index",
+			"style": {
+				"navigationBarTitleText": "优惠券核销",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"text": "工作人员",
+							"width": "auto",
+							"fontSize": "28upx",
+							"float": "right"
+						}]
+					}
+				}
+			}
+		}, {
+			"path": "pages/my/discount/issue_coupons",
+			"style": {
+				"navigationBarTitleText": "发放优惠券",
+				"enablePullDownRefresh": true,
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"text": "新增",
+							"width": "auto",
+							"fontSize": "28upx",
+							"float": "right"
+						}]
+					}
+				}
+			}
+		}, {
+			"path": "pages/my/discount/add/coupon_add",
+			"style": {
+				"navigationBarTitleText": "新增优惠券"
+			}
+		}, {
+			"path": "pages/my/discount/daifa_coupon",
+			"style": {
+				"navigationBarTitleText": "代发优惠券"
+			}
+		}, {
+			"path": "pages/my/discount/daifa_detail",
+			"style": {
+				"navigationBarTitleText": "查看优惠券"
+			}
+		}, {
+			"path": "pages/my/discount/verification_people_list",
+			"style": {
+				"navigationBarTitleText": "核销员列表",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"text": "添加",
+							"width": "auto",
+							"fontSize": "28upx",
+							"float": "right"
+						}]
+					}
+				}
+			}
+		}, {
+			"path": "pages/my/discount/verification_people_add",
+			"style": {
+				"navigationBarTitleText": "添加核销员"
+			}
+		}, {
+			"path": "pages/my/qualification",
+			"style": {
+				"navigationBarTitleText": "资质认证"
+			}
+		},
+		{
+			"path": "pages/generalschool/branchschool/list",
+			"style": {
+				"navigationBarTitleText": "分部列表"
+			}
+		},
+		{
+			"path": "pages/generalschool/list/list",
+			"style": {
+				"navigationBarTitleText": "我的总部"
+			}
+		},
+		{
+			"path": "pages/generalschool/scheduling/index",
+			"style": {
+				"navigationBarTitleText": "添加排班",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"type": "none",
+							"color": "#B3B3BB",
+							"text": "保存",
+							"fontSize": "15px"
+						}]
+					}
+				}
+			}
+		},
+		{
+			"path": "pages/generalschool/scheduling/select",
+			"style": {
+				"navigationBarTitleText": "添加教练",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"type": "none",
+							"color": "#B3B3BB",
+							"text": "添加",
+							"fontSize": "15px"
+						}]
+					}
+				}
+			}
+		},
+		{
+			"path": "pages/generalschool/scheduling/set",
+			"style": {
+				"navigationBarTitleText": "排班模式"
+			}
+		},
+		{
+			"path": "pages/generalschool/scheduling/set_detail",
+			"style": {
+				"navigationBarTitleText": "排班设置",
+				"app-plus": {
+					"titleNView": {
+						"buttons": [{
+							"type": "none",
+							"color": "#B3B3BB",
+							"text": "保存",
+							"fontSize": "15px"
+						}]
+					}
+				}
+			}
+		}
+	],
+	//#endif
+	//#ifdef H5
+	"pages": [
+		{
+			"path" : "pages/share/invitefriend",
+			"style" : {
+				"navigationBarTitleText": "链车欢迎你",
+				"transparentTitle": "always"
+			}
+		},
+		{
+			"path": "pages/share/lookvideo",
+			"style": {
+				"navigationBarTitleText": "链车短视频",
+				"disableScroll": true,
+				"transparentTitle": "always",
+				"app-plus": {
+					"animationType": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/share/invitation",
+			"style": {
+				"navigationBarTitleText": "加入链车",
+				"disableScroll": true,
+				"transparentTitle": "always",
+				"app-plus": {
+					"animationType": "none"
+				}
+			}
+		},
+		{
+			"path": "pages/share/homepage/homepage",
+			"style": {
+				"navigationBarTitleText": "链车短视频",
+				"transparentTitle": "always",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/share/download",
+			"style": {
+				"navigationBarTitleText": "链车短视频",
+				"transparentTitle": "always",
+				"enablePullDownRefresh": true
+			}
+		}
+		
+    ],
+	//#endif
+	"globalStyle": {
+		"navigationBarTextStyle": "white",
+		"navigationBarTitleText": "链车",
+		"navigationBarBackgroundColor": "#191C2F",
+		"backgroundColor": "#191C2F"
+	},
+	"tabBar": {
+		"color": "#F7F6F5",
+		"selectedColor": "#F6A704",
+		"backgroundColor": "#191C2F",
+		"fontSize": "16px",
+		"midButton": {
+			"iconPath": "/static/fb.png",
+			"width": "49px",
+			"height": "45px",
+			"iconWidth": "42px"
+		},
+		// #ifdef APP-PLUS
+		"borderStyle": "#24263a",
+		// #endif
+		// #ifndef APP-PLUS
+		"borderStyle": "black",
+		// #endif
+		"list": [{
+			"pagePath": "pages/shortvideo/shortvideo",
+			"text": "首页"
+		}, {
+			"pagePath": "pages/dynamic/dynamic",
+			"text": "动态"
+		}, {
+			//"pagePath": "pages/appointment/appointment", //正式版本
+			"pagePath": "pages/appointment/appointment",
+			"text": "预约"
+		}, {
+			"pagePath": "pages/my/my",
+			"text": "我的"
+		}]
+	}
+}

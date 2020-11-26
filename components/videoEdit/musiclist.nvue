@@ -1,0 +1,178 @@
+<template>
+	<view>
+		<view v-for="(it,index) in list" :key="index">
+			<view class="music-item" v-for="item in it" :key="item.id">
+				<view class="music-img-view" @click="$parent.playAudio(item.id,type)">
+					<image class="music-img" :src="$realSrc(item.cover)" mode=""></image>
+					<image class="play-img" :class="{'paused':playid === item.id && type == indexType && !$parent.isPaused}" 
+					:src="playid === item.id && type == indexType && !$parent.isPaused ? '../../static/pause.png':'../../static/play.png'" mode=""></image>
+				</view>
+				<view class="music-info">
+					<view class="name-view">
+						<image class="music-icon" src="../../static/music.png" mode=""></image>
+						<text class="music-name">{{item.name}}</text>
+					</view>
+					<text class="music-singer color999">{{item.singer}}</text>
+					<text class="music-duration color999">{{calcDuration(item.duration)}}</text>
+				</view>
+				<view class="music-btn-view">
+					<text class="use-btn" @click="useMusic(item)">使用</text>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script>
+import config from '@/config/index.js'
+import { realSrc } from "@/common/common.js"
+export default {
+	props: ['list','playid','type','indexType'],
+	data (){
+		return {
+			playId: null
+		}
+	},
+	watch: {
+		'list': (arr)=>{
+			console.log(arr)
+		}
+	},
+	methods: {
+		$realSrc:realSrc,
+		calcDuration(time){
+			let m = Math.floor(time / 60);
+			let s = time % 60;
+			if(m < 10){
+				m = `0${m}`;
+			}
+			if(s < 10){
+				s = `0${s}`;
+			}
+			return `${m}:${s}`
+		},
+		useMusic(obj){
+			uni.showLoading({
+				title: '歌曲加载中',
+				mask: true
+			});
+			let has = false, item;
+			let musicList = uni.getStorageSync('musicList') || [];
+			console.log(musicList)
+			for(let i=0, len=musicList.length; i<len; i++){
+				if(obj.id == musicList[i].id){
+					has = true;
+					item = musicList[i]
+					musicList.unshift(item); // 修改选择的歌曲放到缓存的第一位
+					musicList.splice(i+1,1); // 删除原来位置的歌曲
+					break;
+				}
+			}
+			if(has){
+				// 如果已缓存了歌曲，直接返回!
+				uni.setStorage({ 
+					key: 'musicList',
+					data: musicList,
+					success: res=>{
+						console.log(res)
+					}
+				})
+				uni.hideLoading();
+				this.$parent.$parent.isShowMusicSelect = false;
+			}else{
+				let url = `${config.baseUrl}Video/Song/downloadSong?songId=${obj.id}&token=` + uni.getStorageSync('token');
+				// 下载歌曲临时文件
+				uni.downloadFile({
+					url: url,
+					success: res=>{
+						console.log(res.tempFilePath)
+						// 把临时文件保存到本地
+						uni.saveFile({
+							tempFilePath: res.tempFilePath,
+							success: res=>{
+								console.log(res.savedFilePath)
+								obj.musicPath = res.savedFilePath;
+								musicList.unshift(obj)
+								uni.setStorageSync('musicList',musicList)
+								this.$parent.$parent.musicPath = res.savedFilePath;
+								this.$parent.$parent.isShowMusicSelect = false;
+								uni.hideLoading();
+							}
+						})
+					}
+				})
+			}
+		}
+	}
+}
+</script>
+
+<style scoped>
+.color999 {
+	color: #B3B3BB;
+}
+.music-item {
+	flex-direction: row;
+	align-items: center;
+	margin-top: 15px;
+}
+
+.music-img-view {
+	position: relative;
+	width: 137rpx;
+	height: 137rpx;
+	background-color: #f5f5f5;
+	border-radius: 4px;
+	overflow: hidden;
+}
+.play-img {
+	position: absolute;
+	top: 45rpx;
+	left: 53rpx;
+	width: 30rpx;
+	height: 48rpx;
+	z-index: 9;
+}
+.paused {
+	top: 49rpx;
+	height: 40rpx;
+}
+.music-img {
+	width: 100%;
+	height: 100%;
+}
+.music-info {
+	flex: 1;
+	flex-direction: column;
+	justify-content: space-around;
+	padding: 0 15px;
+	height: 140rpx;
+}
+.music-name {
+	padding-left: 20rpx;
+	font-size: 30rpx;
+	color: #191C2F;
+	font-size: 32rpx;
+}
+.music-singer,.music-duration {
+	font-size: 24rpx;
+}
+.use-btn {
+	width: 112rpx;
+	height: 56rpx;
+	line-height: 56rpx;
+	text-align: center;
+	font-size: 25rpx;
+	border-radius: 8rpx;
+	background-color: #F6A704;
+	color: #fff;
+}
+.name-view {
+	flex-direction: row;
+	align-items: center;
+}
+.music-icon {
+	width: 17rpx;
+	height: 25rpx;
+}
+</style>

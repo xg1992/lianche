@@ -1,0 +1,234 @@
+<template>
+	<view class="root">
+		<!-- #ifdef H5 -->
+		<video ref="myVideos" id="myVideo" :src="$realSrc(this.src)" @timeupdate="playIng" @pause="onPause" :loop='true' :muted='muted'
+		 :enable-progress-gesture="false" :page-gesture="false" :controls="false" :initial-time="0" :show-fullscreen-btn="false"
+		 :show-center-play-btn="false" :style="boxStyle" :objectFit='hfiveObjectFit' webkit-playsinline  @error="videoError" x5-video-player-type="h5-page"></video>
+		<!-- #endif -->
+		<!-- cover会有部分被覆盖，fill会将视频压扁，因为高度矮了底部的导航栏，可续自定义导航栏才能解决这个问题 -->
+		<!-- #ifdef APP-PLUS -->
+		<Hs-Video ref="myVideos" id="myVideo" :src="$realSrc(this.src)" @play="playIng" @pause="onPause" :loop='true' :muted='muted'
+		 :style="boxStyle" :objectFit='objectFit' :cover="cover" @error="errorVideo" v-if="isAndroid"></Hs-Video>
+			
+		<video ref="myVideos" id="myVideo" :src="$realSrc(this.src)" @play="playIng" @pause="onPause" :loop='true' :muted='muted'
+		 :enable-progress-gesture="false" :page-gesture="false" :controls="false" :initial-time="0" :show-fullscreen-btn="false"
+		 :show-center-play-btn="false" :style="boxStyle" :objectFit='iosObjectFit'  @error="videoError" v-if="isIos"></video>
+		<!-- #endif -->
+	</view>
+</template>
+
+<script>
+	import { realSrc } from "../../common/common.js"
+	export default {
+		watch: {
+			// #ifdef H5
+			state(newValue, oldValue) {
+				let createVideoContext = uni.createVideoContext('myVideo', this);
+				this.createVideoContext = createVideoContext;
+				console.log('播放状态：'+newValue)
+				setTimeout(() => {
+					switch (newValue) {
+						case 'play':
+							// createVideoContext.seek(0);
+							createVideoContext.play();
+							this.isPause = false
+							break;
+						case 'continue':
+							createVideoContext.play();
+							this.isPause = false
+							break;
+						case 'pause':
+							this.doPause()
+							break;
+						case 'stop':
+							createVideoContext.seek(0);
+							this.doPause()
+							break;
+						default:
+							break;
+					}
+				}, 120)
+			},
+			// #endif
+			
+			// #ifdef APP-PLUS
+			state(newValue, oldValue) {
+				const myVideos = this.$refs.myVideos;
+				console.log('播放状态：'+newValue)
+				setTimeout(() => {
+					switch (newValue) {
+						case 'play':
+							myVideos.play();
+							this.isPause = false
+							break;
+						case 'continue':
+							myVideos.play();
+							this.isPause = false
+							break;
+						case 'pause':
+							myVideos.pause()
+							break;
+						case 'stop':
+							myVideos.stop()
+							break;
+						default:
+							break;
+					}
+				}, 120)
+			},
+			// #endif
+			videoPath(val){
+				this.src = '';
+				this.$nextTick(()=>{
+					this.src = val;
+				})
+			},
+		},
+		data(){
+			return{
+				timer:null,
+				isPause:false,
+				canChangeSrc: true, //播放出错时，默认可以修改一次视频地址
+				isIos: false,
+				isAndroid: false,
+				objectFit: 'fill',
+				iosObjectFit: 'cover'
+			}
+		},
+		props: {
+			state: {
+				default: false
+			},
+			src: {
+				default: String
+			},
+			muted: {
+				default: false
+			},
+			boxStyle: {
+				default: {}
+			},
+			videoPath: {
+				default: String
+			},
+			videoHttp: {
+				default: String
+			},
+			videoId: {
+				default: Number
+			},
+			cover: {
+				default: ''
+			},
+			videoInfo: {
+				default: {}
+			},
+			hfiveObjectFit: {
+				default: 'cover'
+			}
+		},
+		created() {
+			// 判断是安卓还是ios
+			if(uni.getSystemInfoSync().platform == "android"){
+				this.isAndroid = true;
+			}else{
+				this.isIos = true;
+			}
+			// 根据视频宽高比例判断是否全屏播放
+			if(this.videoInfo.width && this.videoInfo.height / this.videoInfo.width < 1.5){
+				this.objectFit = 'contain';
+				if(this.isIos) this.iosObjectFit = 'contain';
+			}
+			let videobj = uni.getStorageSync(`local_video_${this.videoId}`)
+			if(videobj){
+				videobj = JSON.parse(videobj)
+				this.src = videobj.localPath;
+			}else{
+				this.src = this.videoPath;
+			}
+		},
+		mounted(){
+			console.log(this.state)
+			if(this.state === 'play'){
+				this.$refs.myVideos.play();
+			}
+		},
+		methods: {
+			$realSrc:realSrc,
+			videoSrc(src){
+				return realSrc(src)
+			},
+			onPause(){
+				this.isPause = true
+			},
+			doPause(){
+				let times = 0
+				const videoCtx =  uni.createVideoContext('myVideo', this);
+				videoCtx.pause()
+				this.timer = setInterval(()=>{
+					videoCtx.pause()
+					times ++
+					if(times>=20||this.isPause){
+						if(this.timer){
+							this.clearTimer()
+						}else{
+							this.clearAllTimer()
+						}
+					}
+				},100)
+			},
+			clearTimer(){
+				clearInterval(this.timer)
+				this.timer = null
+			},
+			clearAllTimer(){
+				for(var i = 1; i < 1000; i++) {
+					clearInterval(i);
+				}
+			},
+			videoError(err){
+				if(this.canChangeSrc){
+					this.src = '';
+					this.$nextTick(()=>{
+						this.src = this.videoHttp;
+						this.canChangeSrc = false;
+					})
+					console.log('视频播放出错！重新修改视频地址')
+				}else{
+					uni.showToast({
+						title: '播放出错！',
+						icon: 'none'
+					})
+				}
+				
+			},
+			playIng(){
+				if(this.isPlay) {
+					return ;
+				}
+				this.$emit('play')
+				this.isPlay = true;
+				console.log('播放成功！')
+			},
+			errorVideo(err){
+				console.log(err)
+			}
+		},
+		beforeDestroy() {
+			this.clearTimer()
+		}
+	}
+</script>
+
+<style>
+	.root {
+		background-color: #000000;
+		position: relative;
+	}
+
+	.videoImg {
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+</style>

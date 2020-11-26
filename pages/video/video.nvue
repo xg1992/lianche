@@ -1,0 +1,101 @@
+<template>
+	<div>
+		<shortvideo ref="short" :list="list" :noMore="noMore" @loadMore="load" ></shortvideo>
+	</div>
+</template>
+<script>
+	import shortvideo from "@/components/shortvideo/shortvideo.nvue"
+	import {
+		request
+	} from '@/common/api.js'
+	export default {
+		components: {
+			shortvideo
+		},
+		data() {
+			return {
+				page: 1,
+				pageSize: 20,
+				noMore: false,
+				list: [],
+				options: {},
+				requestUrl: 'Video/Video/recommendVideos',
+			}
+		},
+		methods: {
+			load(obj) {
+				if (this.noMore === true) return
+				let params = {
+					...this.options,
+					page: this.page,
+					pagesize: this.pageSize,
+					type: 2,
+				}
+				request(this.requestUrl, params).then(res => {
+					if (res.data) {
+						// 上传中的视频播放本地视频路径
+						res.data.forEach(item=>{
+							if(item.state === 0){
+								let videoInfo = uni.getStorageSync('uploadVideoInfo'+item.videoId);
+								console.log(videoInfo)
+								if(videoInfo){
+									item.video = videoInfo.video;
+								}
+							}
+						})
+						this.list = this.list.concat(res.data)
+						if (this.page == 1) {
+							this.$nextTick(()=>{
+								this.list[0].playState = 'play';
+								this.list[1].playState = 'stop'; // 安卓使用视频播放插件，初始化时避免出现暂停按钮
+							})
+						}else{
+							this.$nextTick(()=>{
+								this.list[obj.k].playState = 'play';
+							})
+						}
+						this.page++
+						if (res.data.length < this.pageSize) {
+							this.noMore = true
+						}
+					}
+					console.log(this.list);
+				});
+			}
+		},
+		onHide() {
+			this.$nextTick(() => {
+				this.$refs['short'].onHide()
+			})
+			uni.$off('videoDel')
+		},
+		onShow() {
+			this.$nextTick(() => {
+				this.$refs.short.onShow()
+			})
+			uni.$on('videoDel',(k)=>{
+				this.list.splice(k,1)
+			})
+		},
+		onLoad(options) {
+			console.log(options);
+			this.options = options
+			if (options.act) {
+				this.requestUrl = options.act
+			}
+			this.load()
+			this.$nextTick(() => {
+				this.$refs.short.onLoad()
+			})
+		},
+		onReady() {
+			this.$nextTick(() => {
+				this.$refs.short.onReady()
+			})
+		},
+		onUnload() {
+			this.$refs.short.onUnload()
+		}
+	}
+</script>
+<style></style>

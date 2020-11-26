@@ -1,0 +1,184 @@
+<template>
+	<view class="operate-row">
+		<template v-for="(item,index) in operationAll" >
+			<view class="operate-item" @click="operateFunction(item.type,item.title)">
+				<view class="item-arc"><image class="view-item_H_image" :src="item.src"></image></view>
+				<view><text class="operate-title">{{item.title}}</text></view>
+			</view>
+		</template>		
+	</view>
+</template>
+
+<script>
+	import {request} from '@/common/api.js'
+	
+	const globalData = getApp().globalData;
+	globalData.delvideoList = []; // 已删除的视频列表
+	globalData.setTopvideoList = []; // 已置顶的视频列表
+	globalData.cancelSetTopvideoList = []; // 取消置顶的视频列表
+	export default {
+		props: ['videoInfo'],
+		data(){
+			return {
+				operationAll: [],
+				operation: [], //公共操作
+				operation1: [ // 对别人视频的操作
+					{title: '举报', src: '/static/icons/jubao.png',type: 1},
+				],
+				operation2: [ // 对自己视频的操作
+					{title: '删除', src: '/static/icons/del.png',type: 3}
+				],
+				setTop: {title: '置顶', src: '/static/icons/zhiding.png',type: 2},
+				cancelSetTop: {title: '取消置顶', src: '/static/icons/notzhiding.png',type: 2},
+				uid: uni.getStorageSync('uid'),
+				videoId: null,
+			}
+		},
+		created(){
+			this.videoId = this.videoInfo.video_id || this.videoInfo.videoId;
+			let videoUid = this.$parent.dataList[this.$parent.k].uid;
+			if(videoUid == this.uid){ // 如果是用户自己的视频，仅显示置顶和删除，否则显示举报
+				let istop = this.$parent.dataList[this.$parent.k].istop;
+				if(istop > 0){
+					this.operation2.unshift(this.cancelSetTop); // 如果视频已置顶，则显示取消置顶
+				}else{
+					this.operation2.unshift(this.setTop); // 显示置顶按钮
+				}
+				this.operationAll = this.operation.concat(this.operation2)
+			}else{
+				this.operationAll = this.operation.concat(this.operation1)
+			}
+			console.log(uni.getStorageSync('uid'))
+			this.setOperateFunc()
+		},
+		methods: {
+			operateFunction(index,title){
+				this.operateFunctionList[index](title);
+			},
+			setOperateFunc(){
+				this.operateFunctionList = {
+					1: ()=>{
+						console.log('举报')
+						this.report()
+					},
+					2: (title)=>{
+						console.log('置顶')
+						this.setTopVideo(title)
+					},
+					3: ()=>{
+						console.log('删除')
+						this.delVideo()
+					},
+				}
+			},
+			// 举报视频
+			report() {
+				let that = this;
+				uni.navigateTo({
+					url: '/pages/my/report?video_id=' + this.videoId
+				});
+			},
+			// 删除视频
+			delVideo(){
+				let that = this;
+				uni.showModal({
+					content: '确认删除本视频吗？',
+					success(res) {
+						if(res.confirm){
+							request('Video/Video/delVideo', {
+								videoId: that.videoId,
+							},'post',false).then(res=>{
+								console.log(res)
+								if(res.res === 1){
+									globalData.delvideoList.push(that.videoInfo.videoId);
+									that.$parent.closeDialog(); // 关闭操作弹出层
+									uni.$emit('videoDel',{k:that.$parent.k}); // 删除成功，把当前视频从当前列表中删除
+								}
+								uni.showToast({
+									title: res.msg,
+									icon: 'none'
+								})
+							})
+						}
+					}
+				})
+			},
+			// 置顶视频
+			setTopVideo(title){
+				console.log(this.videoInfo)
+				// 审核通过的视频才可以置顶操作
+				if(this.videoInfo.state === 2 || this.videoInfo.state === undefined){
+					let url = 'Video/Video/istopVideo';
+					if(title === '取消置顶'){
+						url = 'Video/Video/cancelIstopVideo';
+					}
+					request(url, {
+						videoId: this.videoId,
+					},'post',false).then(res=>{
+						uni.showToast({
+							title: res.msg,
+							icon: 'none'
+						})
+						if(res.res === 1){
+							if(title === '取消置顶'){
+								this.operation2[0] = this.setTop;
+								// 提供返回作品页面时更新作品列表
+								// 取消置顶时判断是否存在已置顶列表，存在则删除已置顶列表中对应视频，不存在则添加到已取消置顶列表
+								let index1 = globalData.setTopvideoList.indexOf(this.videoInfo.videoId);
+								if(index1 >= 0){
+									globalData.setTopvideoList.splice(index1,1)
+								}else{
+									globalData.cancelSetTopvideoList.push(this.videoInfo.videoId)
+								}
+							}else{
+								this.operation2[0] = this.cancelSetTop;
+								// 置顶成功把置顶视频保存到已置顶视频列表
+								globalData.setTopvideoList.push(this.videoInfo.videoId)
+							}
+							console.log(globalData)
+							this.operationAll = this.operation.concat(this.operation2)
+						}
+					})
+				}else{
+					uni.showToast({
+						title: '审核通过的视频才可以置顶',
+						icon: 'none'
+					})
+				}
+			}
+		}
+	}
+</script>
+
+<style scoped>
+/* xg 2020.9.2 */
+.operate-row {
+	flex-direction: row;
+	border-top-width: 1px;
+	border-top-color: #f1f1f1;
+}
+.operate-item {
+	padding: 30rpx 20rpx;
+	width: 160rpx;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+}
+.item-arc {
+	width: 100rpx;
+	height: 100rpx;
+	border-radius: 50%;
+	background-color: #f5f5f5;
+	justify-content: center;
+	align-items: center;
+	margin-bottom: 10rpx;
+}
+.view-item_H_image {
+	width: 50rpx;
+	height: 50rpx;
+}
+.operate-title {
+	color: #666;
+	font-size: 28rpx;
+}
+</style>

@@ -1,0 +1,883 @@
+<template>
+	<view class="container" bubble="true">
+		<!-- <view class="n_center top_nav">
+			<view class="top_nav_item" @click="video_type_click(1)">
+				<text :class="video_type == 1 ? 'top_nav_cur' : 'no_cur'">推荐</text>
+				<view class="top_nav_xian" v-if="video_type == 1"></view>
+			</view>
+			<view class="top_nav_item" @click="video_type_click(2)">
+				<text :class="video_type == 2 ? 'top_nav_cur' : 'no_cur'">附近</text>
+				<view class="top_nav_xian" v-if="video_type == 2"></view>
+			</view>
+		</view> -->
+		<view class="search_box n_center" @tap="tosearch">
+			<image src="../../static/search.png" mode="" style="width: 41rpx;height: 40rpx;"></image>
+		</view>
+		<list :loadmoreoffset="wHeight" :style="{height:`${wHeight}px`}" :show-scrollbar="false" ref="listBox" :pagingEnabled="true"
+		 :offset-accuracy="20" :bounce="false" @scroll="scrollEnd">
+			<cell v-for="(item, i) in dataList" :uid="item.uid" @swipe="handleSwipe">
+				<div ref="item" class="item" :style="boxStyle">
+					<jVideo ref="videoPlay" v-if="Math.abs(k - i) <= 1" :state="item.playState" :videoPath="item.lacalPath ? item.lacalPath : item.video"
+					 :videoHttp="item.video" :boxStyle="boxStyle" :currentVideoId="currentVideoId" :cover="$realSrc(item.cover)" :videoInfo="item"></jVideo>
+
+					<view class="videoHover" @click="tapVideoHover(item.playState, $event)" :style="boxStyle">
+						<image v-if="item.playState == 'pause'" class="playState" src="../../static/img/index/play.png"></image>
+					</view>
+					<!-- 右侧操作按钮列 -->
+					<toolbar :item="item" :i="i"></toolbar>
+					<!-- 视频所有者信息 -->
+					<view class="content">
+						<text class="userName">@{{ item.nickname }}</text>
+						<view class="topics_box">
+							<text class="topics_item" @click="topTopic(n.topicsId)" v-for="(n, idx) in item.topics" :key="idx"># {{ n.name }}</text>
+						</view>
+						<text class="words">{{ item.title }}</text>
+						<view class="n_h_center" style="margin-top: 30rpx;" v-if="item.address != '' && item.address">
+							<image src="../../static/location.png" mode="" style="width: 22rpx;height: 26rpx;margin-right: 20rpx;"></image>
+							<text class="font24 grace-white">{{ item.address }}</text>
+						</view>
+					</view>
+				</div>
+			</cell>
+		</list>
+		<cover-view class="operate" v-if="shareshow" :style="wWidth">
+			<view class="share-mask" @click.stop="shareshow = false"></view>
+			<view slot="btns" class="share-title" :style="wWidth">
+				<text class="grace-btdialog-btn grace-blue" style="color: #000000;font-weight:bold;">分享到</text>
+			</view>
+			<view slot="content">
+				<scroll-view class="scroll-view_H" scroll-x="true" @scroll="scroll" scroll-left="0">
+					<view class="scroll-view-item_H uni-bg-red" v-for="(item, index) in fenxiang" :key="index" @click="actshare(index)">
+						<image class="view-item_H_image" :src="item.src"></image>
+						<text class="view-item_H_text">{{ item.name }}</text>
+					</view>
+				</scroll-view>
+			</view>
+
+			<operation :videoInfo="dataList[k]"></operation>
+
+			<view class="line"></view>
+			<view slot="btns" class="grace-btdialog-btns link-top" style="text-align:center;justify-content: center;">
+				<text class="grace-btdialog-btn grace-blue" style=" text-align: center; color:#666666" @click="closeDialog">取消</text>
+			</view>
+
+		</cover-view>
+
+		<view class="n_center" style="width:100%;height: 100%;position: fixed;top: 0;left:0;bottom: 0;right: 0;" v-if="dataList == ''">
+			<image src="../../static/cese.gif" mode="" style="width:300rpx;height:300rpx;" v-if="!req"></image>
+			<image src="../../static/wsj.png" mode="" style="width:300rpx;height:321rpx;" v-if="req"></image>
+		</view>
+
+		<heart v-if="isDianZan" hideCtrl="isDianZan"></heart>
+		<!-- <view class="mc_box" :style="boxStyle"></view> -->
+	</view>
+</template>
+<script>
+	import jVideo from '@/components/j-video/j-video.nvue';
+	import date from '../../graceUI/jsTools/date.js';
+	import graceBottomDialog from '../../graceUI/weexComponents/graceBottomDialog';
+	import permision from '@/common/permission.js';
+	import {
+		dblclick
+	} from '@/common/common.js';
+	import {
+		request,
+		qx
+	} from '@/common/api.js'
+	import toolbar from './components/toolbar.vue'
+	import operation from './components/operation.nvue'
+	import heart from '@/components/heart/heart.nvue'
+	import {
+		realSrc
+	} from "../../common/common.js"
+	let srcollLimit = null;
+	export default {
+		components: {
+			jVideo,
+			graceBottomDialog,
+			toolbar,
+			operation,
+			heart
+		},
+		props: {
+			list: {
+				type: Array,
+				default: []
+			},
+			typeShow: {
+				type: Number,
+				default: 2
+			}
+		},
+		data() {
+			return {
+				date,
+				dataList: [],
+				scrollTop: 0,
+				oldScrollTop: 0,
+				wWidth: {
+					width: uni.getSystemInfoSync().windowWidth + 'px'
+				},
+				wHeight: 0,
+				boxStyle: {
+					'padding-top': '-2px',
+					'object-fit': 'contain',
+					height: 0,
+					width: uni.getSystemInfoSync().windowWidth + 'px',
+				},
+				k: 0,
+				playIngIds: [], //正在播放的视频id列队，列队用于处理滑动过快导致的跳频问题
+				ready: false,
+				//isDragging:false//用户是否正在拖动列表
+				fenxiang: [{
+						src: '/static/fenxiang1.png',
+						name: '微信'
+					},
+					{
+						src: '/static/fenxiang2.png',
+						name: '朋友圈'
+					},
+					/*{ src: '/static/fenxiang5.png', name: '微博' },
+					{ src: '/static/fenxiang3.png', name: 'QQ' },
+					{ src: '/static/fenxiang4.png', name: 'QQ空间' }*/
+				],
+				shareshow: false,
+				commentshow: false,
+				commentContent: '',
+				comments_list: [],
+				loading: false,
+				current: 0,
+				list_length: 0,
+				page: 1,
+				commentpage: 1,
+				compage: 0,
+				timestamp: new Date(),
+				aite_stu: false,
+				toNickname: '',
+				toUid: '',
+				topCommentid: '',
+				toCommentid: '',
+				totalCount: 0,
+				req: false,
+				video_type: 1,
+				placeholder: '请输入评论内容',
+				comfocus: false,
+				loadstatus: '加载中...',
+				loadstu: false,
+				isShowPage: true, //当前页面是否显示
+				isHandOperateBgm: false, //是否手动操作
+				notPause: false, // hide不暂停
+				downloadingList: [], // 正在下载列表
+				downloadedList: [], // 已经下载的列表
+				currentVideoId: 0,
+				isDianZan: false, // 点赞
+				contentOffsetY: 0,
+				flag: true,
+			};
+		},
+		watch: {
+			list: {
+				handler: function(val, oldval) {
+					this.dataList = JSON.parse(JSON.stringify(val))
+				},
+				deep: true
+			},
+			//list item的index监听
+			k(k, old_k) {
+				console.log(k, "-", old_k);
+				let that = this;
+				console.log('当前播放视频链接：' + that.dataList[k].video);
+				console.log(that.dataList[k]);
+				// that.dataList[old_k].playState = 'stop';
+				this.$nextTick(() => {
+					that.dataList[k].playState = 'play';
+					that.currentVideoId = that.dataList[k].video_id
+					//点击视频区域，如果评论框还在就关闭它
+					that.commentshow == true ? (that.commentshow = false) : '';
+					request('Video/Video/startVideos', {
+						videoId: that.dataList[k].video_id
+					}, 'POST', false).then(res => {
+						// console.log(res)
+					});
+					let time_difference = parseInt((new Date() - that.timestamp) / 1000);
+					this.timestamp = new Date();
+					if (time_difference > 3) {
+						let videoId = that.dataList[old_k].video_id || that.dataList[old_k].videoId
+						// request('Video/Video/durationVideos', {videoId:that.dataList[old_k].video_id,playTime:time_difference}).then(res => {})
+						request('Video/Video/endVideos', {
+							videoId: videoId,
+							playTime: time_difference
+						}, 'POST', false).then(res => {}).catch(err => {});
+					}
+				})
+			}
+		},
+		methods: {
+			$realSrc: realSrc,
+			onHide() {
+				let that = this;
+				that.isShowPage = false;
+				that.isHandOperateBgm = true;
+				// console.log('yincangla:',that.isShowPage);
+				if (that.dataList != '' && !that.notPause) {
+					that.dataList[that.k].playState = 'pause';
+					// that.pauseBgm()
+				}
+			},
+			onShow() {
+				console.log(this.$parent)
+				let that = this;
+				that.isShowPage = true;
+				// console.log('chulaile:',that.isShowPage);
+				if (that.dataList != '' && !that.notPause) {
+					that.loadComment()
+					this.$nextTick(() => {
+						that.dataList[that.k].playState = that.dataList[that.k].playState == 'pause' ? 'continue' : 'pause';
+					})
+					// that.playBgm()
+				} else {
+					//this.load();
+				}
+				that.notPause = false
+				if (uni.getStorageSync('userinfo')) {
+					that.uid = uni.getStorageSync('userinfo').uid;
+				}
+				if (qx([16])) {
+					uni.setTabBarItem({
+						index: 2,
+						text: '教学'
+					})
+				}
+			},
+			onLoad() {
+				let that = this
+				this.wHeight = uni.getSystemInfoSync().windowHeight;
+				this.boxStyle.height = this.wHeight + 'px'; //这里必须得减个数，不然滑屏的时候回闪退。。。神奇
+				// this.load();
+			},
+			onReady() {
+				let that = this
+				// 添加评论监听器，评论成功，数量+1
+				uni.$on('comment', function(data) {
+					console.log(data);
+					if(data.isDel==1){
+						that.dataList[that.k].talks--;
+					}else{
+						that.dataList[that.k].talks++;
+					}
+					
+				})
+				// ios拍摄时暂停播放
+				uni.$on('pauseVideo', function(data) {
+					that.dataList[that.k].playState = 'pause';
+				})
+			},
+			onUnload() {
+				uni.$off(['comment', 'pauseVideo']) // 移除监听器
+			},
+			//播放bgm
+			playBgm() {
+				bgAudioMannager.play()
+			},
+			//暂停bgm
+			pauseBgm() {
+				setTimeout(function() {
+					bgAudioMannager.pause()
+				}, 300);
+			},
+			load() {
+				let that = this;
+				request('Video/Video/recommendVideos', {
+					page: 1
+				}).then(res => {
+					that.dataList = res.data.list;
+					console.log(that.dataList)
+					setTimeout(function() {
+						that.dataList[0].playState = 'play';
+						this.$set(that.dataList[0], 'active', true)
+					}, 21);
+					that.req = true;
+				});
+			},
+			tovideo(uid, videoid) {
+				// console.log(uid, videoid);
+				uni.navigateTo({
+					url: '/pages/video/video?act=Video/Video/orderVideos&uid=' + uid + '&ids=' + videoid
+				});
+			},
+
+			//去话题页
+			topTopic(topicId) {
+				uni.navigateTo({
+					url: '/pages/similar/topic?id=' + topicId
+				});
+			},
+
+			//去同约页
+			tosimilar(type, videoid) {
+				uni.navigateTo({
+					url: '/pages/similar/similar?type=' + type + '&id=' + videoid
+				});
+			},
+
+			//去用户主页
+			tohome(uid) {
+				console.log(uid)
+				uni.navigateTo({
+					url: '/pages/homepage/homepage?uid=' + uid
+				});
+			},
+			videohide(e) {
+				console.log(e);
+			},
+			video_type_click(e) {
+				let that = this;
+				that.video_type = e;
+				if (that.video_type == 1) {
+					this.load();
+				}
+				if (that.video_type == 2) {
+					that.Jurisdiction();
+					let location = uni.getStorageSync('location');
+					console.log(location);
+					request('Video/Video/enclosureVideo', {
+						lat: location.lat,
+						lon: location.lon
+					}).then(res => {
+						that.dataList = [];
+						// console.log(res);
+						let list = res.data.list;
+						list[0].playState = 'play';
+						that.dataList = list;
+						that.req = true;
+					});
+				}
+			},
+			Jurisdiction() {
+				const res = uni.getSystemInfoSync();
+				let platform = res.platform == 'android' ? 1 : res.platform == 'ios' ? 2 : 3;
+				// http://stream.cdn.aliyun.dcloud.net.cn/marketplace/33a7b670-a8de-11e9-bab5-adf7d90773ab/plugin_example_ide.zip?v=1563581704
+				if (platform == 1) {
+					let power = permision.requestAndroidPermission('android.permission.ACCESS_FINE_LOCATION');
+					let strStatus = power ? '已' : '未';
+					if (power) {
+						uni.getLocation({
+							type: 'wgs84',
+							success(res) {
+								uni.setStorageSync('location', {
+									lon: res.longitude,
+									lat: res.latitude
+								});
+							}
+						});
+					} else {
+						uni.showModal({
+							title: '提示',
+							content: '位置权限' + strStatus + '获得授权',
+							success: function(res) {
+								if (res.confirm) {
+									permision.gotoAppPermissionSetting();
+								}
+							}
+						});
+					}
+				} else {
+					//判断iOS上是否给予位置权限，有权限返回true，否则返回false
+					if (permision.judgeIosPermission('location')) {
+						uni.getLocation({
+							type: 'wgs84',
+							success: function(res) {
+								uni.setStorageSync('location', {
+									lon: res.longitude,
+									lat: res.latitude
+								});
+							}
+						});
+					} else {
+						uni.showModal({
+							title: '提示',
+							content: '位置权限' + strStatus + '获得授权',
+							success: function(res) {
+								if (res.confirm) {
+									permision.gotoAppPermissionSetting();
+								}
+							}
+						});
+					}
+				}
+			},
+			handleSwipe(e) {
+				// console.log(e);
+				// 左滑进入主页，效果不是很灵敏
+				// if(e.direction=='left' && e.target.attr.uid>0){
+				// 	uni.navigateTo({
+				// 	    url: '/pages/homepage/homepage?uid='+e.target.attr.uid
+				// 	});
+				// }
+			},
+			//点击播放&&暂停||点赞
+			tapVideoHover(playState, event) {
+				dblclick().then(res => {
+					if (res.dblclick) {
+						this.isDianZan = true;
+						if (this.dataList[this.k].operation != 1) this.cLike();
+					} else {
+						console.log('state--', playState);
+						let that = this;
+						//点击视频区域，如果评论框还在就关闭它
+						that.commentshow == true ? (that.commentshow = false) : '';
+						if (that.dataList != '') {
+							if (playState == 'play' || playState == 'continue') { //暂停
+								that.dataList[that.k].playState = 'pause';
+								// that.pauseBgm()
+								that.isHandOperateBgm = false
+							} else { //播放
+								that.dataList[that.k].playState = 'continue';
+								// that.playBgm()
+								that.isHandOperateBgm = true
+							}
+						} else {
+							that.load();
+						}
+					}
+				})
+			},
+			toComment() {
+				this.notPause = true
+				let video_id = this.dataList[this.k].video_id || this.dataList[this.k].videoId
+				let video_uid = this.dataList[this.k].uid
+				console.log(video_uid);
+				uni.navigateTo({
+					url: `/pages/comment/comment?id=${video_id}&video_uid=${video_uid}`
+				})
+			},
+			loadComment() {
+				console.log('loadComment');
+				const that = this;
+				let videoId = that.dataList[that.k].video_id || that.dataList[that.k].videoId;
+				request('Video/Comment/getCommentsToVideo', {
+					videoid: videoId,
+					page: 1,
+					pagesize: 10
+				}, 'POST', false).then(res => {
+					console.log(res);
+					that.comments_list = res.data;
+					that.totalCount = res.totalCount;
+					that.$set(that.dataList[that.k], 'talks', res.totalCount)
+				});
+			},
+			loadmore() {
+				const that = this;
+				this.loadstu = true;
+				request('Video/Comment/getCommentsToVideo', {
+					videoid: that.dataList[that.k].video_id,
+					page: that.commentpage + 1,
+					pagesize: 10
+				}).then(res => {
+					if (res.data !== '') {
+						that.comments_list.concat(res.data);
+						that.commentpage = that.commentpage + 1;
+						that.loadstu = false;
+					}
+					if (res.data == '') {
+						that.loadstu = true;
+						that.loadstatus = '没有更多了';
+					}
+				});
+			},
+			upto_comment(id, uid, name, topid) {
+				// console.log(this.comfocus);
+				if (uid == uni.getStorageSync('uid')) {
+					return false;
+				}
+				this.toNickname = name;
+				this.placeholder = '@' + name;
+				this.toCommentid = id;
+				this.toUid = uid;
+				this.topCommentid = topid ? topid : '';
+				this.aite_stu = true;
+				this.comfocus = true;
+			},
+			delaite() {
+				this.placeholder = '请输入评论内容';
+				this.toNickname = '';
+				this.toCommentid = '';
+				this.toUid = '';
+				this.topCommentid = '';
+				this.aite_stu = false;
+			},
+
+			//提交评论
+			upcomment() {
+				const that = this;
+				if (!uni.getStorageSync('token')) {
+					this.commentshow = false;
+					uni.navigateTo({
+						url: '/pages/login/login'
+					});
+					return false;
+				}
+				uni.hideKeyboard(); //点击发表评论,就把键盘收回
+				// console.log(that.commentContent);
+				if (that.commentContent) {
+					let value = that.commentContent;
+					let len = value.match(/[^ -~]/g) == null ? value.length : value.length + value.match(/[^ -~]/g).length;
+					if (this.topCommentid == '' && this.toCommentid != '') {
+						this.topCommentid = this.toCommentid;
+					}
+					if (len > 400 || len < 1) {
+						uni.showToast({
+							title: '评论内容不得多于400字少于1字',
+							icon: 'none'
+						});
+					}
+					request('Video/Comment/addVideoComment', {
+						videoid: that.dataList[that.k].video_id,
+						toCommentid: this.toCommentid,
+						toUid: this.toUid,
+						content: that.commentContent,
+						_token: uni.getStorageSync('token'),
+						toNickname: this.toNickname,
+						topCommentid: this.topCommentid
+					}).then(res => {
+						// console.log(res);
+						uni.showToast({
+							title: res.msg,
+							icon: 'none'
+						});
+						if (res.res == 1) {
+							that.toComment();
+							that.delaite();
+							this.commentContent = '';
+						}
+					});
+				}
+			},
+			delcomment(id) {
+				let that = this;
+				uni.showModal({
+					title: '提示',
+					content: '确认删除该评论?',
+					success: function(res) {
+						if (res.confirm) {
+							request('Video/Comment/delComment', {
+								commentid: id,
+								_token: uni.getStorageSync('token')
+							}).then(res => {
+								uni.showToast({
+									title: res.msg,
+									icon: 'none'
+								});
+								if (res.res == 1) {
+									that.toComment();
+								}
+							});
+						}
+					}
+				});
+			},
+			morecomment(id, idx) {
+				let that = this;
+
+				request('Video/Comment/getSonCommentsToVideo', {
+					topCommentid: id,
+					page: that.compage + 1,
+					pagesize: 3
+				}).then(res => {
+					console.log(res);
+					let list = res.data;
+					that.comments_list[idx].reply = that.comments_list[idx].reply.concat(list);
+					if (res.data != '') {
+						that.compage = that.compage + 1;
+					}
+				});
+			},
+			tosearch() {
+				uni.navigateTo({
+					url: '/pages/search/index'
+				});
+			},
+			share() {
+				this.shareshow = true;
+				// uni.getCurrentSubNVue().hide('auto')
+			},
+			actshare(idx) {
+				let all = {
+					provider: '',
+					scene: ''
+				};
+				if (idx == 0) {
+					all.provider = 'weixin';
+					all.scene = 'WXSceneSession';
+				}
+				if (idx == 1) {
+					all.provider = 'weixin';
+					all.scene = 'WXSenceTimeline';
+				}
+				if (idx == 2) {
+					all.provider = 'sinaweibo';
+					all.scene = '';
+				}
+				if (idx == 3) {
+					all.provider = 'qq';
+					all.scene = '';
+				}
+				if (idx == 4) {
+					all.provider = 'qq';
+					all.scene = '';
+				}
+				// console.log(all);
+				let that = this;
+				let videoId = that.dataList[that.k].video_id || that.dataList[that.k].videoId;
+				uni.share({
+					provider: all.provider,
+					scene: all.scene,
+					href: 'https://lianche.haoshuninfo.com/h5/share/index.html#/pages/share/lookvideo?video_id=' + videoId,
+					title: '来链车观看精彩视频吧！',
+					summary: that.dataList[that.k].title,
+					imageUrl: this.$realSrc(that.dataList[that.k].cover),
+					success: function(res) {
+						// console.log('success:' + JSON.stringify(res));
+						// type 分享类型，0:其他，1：短视频   channel 分享渠道,0:其他，1:微信好友或群，2:微信朋友圈, 3:微博, 4:qq, 5:qq空间
+						request('Video/Video/sharesAdd', {
+							type: 1,
+							channel: idx + 1,
+							videoid: videoId,
+							url: 'https://lianche.haoshuninfo.com/h5/share/index.html#/pages/share/lookvideo?video_id=' + videoId,
+							message: that.dataList[that.k].title
+						}).then(res => {});
+					},
+					fail: function(err) {
+						console.log('fail:' + JSON.stringify(err));
+					}
+				});
+			},
+
+
+			closeDialog() {
+				this.shareshow = false;
+				this.commentshow = false;
+				this.loading = false;
+				this.loadstu = false;
+				this.commentpage = 1;
+				this.compage = 1;
+			},
+			cLike() {
+				let that = this;
+				if (!uni.getStorageSync('token')) {
+					uni.navigateTo({
+						url: '/pages/login/login'
+					});
+					return false;
+				}
+				var oldOperation = that.dataList[that.k].operation;
+
+				//点赞处理
+				var handleZan = function() {
+					that.dataList[that.k].operation = that.dataList[that.k].operation == 1 ? 0 : 1;
+					that.dataList[that.k].zans = that.dataList[that.k].zans + (that.dataList[that.k].operation == 0 ? -1 : 1);
+				}
+				handleZan(); //前端先修改点赞效果,后端慢慢处理,以提高用户体验
+				let videoId = that.dataList[that.k].video_id || that.dataList[that.k].videoId;
+				request('Video/Video/zanVideo', {
+					videoId: videoId,
+					isAdd: oldOperation == 1 ? 0 : 1,
+					_token: uni.getStorageSync('token')
+				}, 'post', false).then(res => {
+					// that.load()
+					if (res.res == 13) {
+						uni.navigateTo({
+							url: '/pages/login/login'
+						});
+						return false;
+					}
+					if (res.res == 1) {
+						// handleZan(); //服务器请求成功后做点赞处理
+					} else {
+						uni.showToast({
+							title: res.msg,
+							icon: 'none'
+						});
+					}
+				});
+			},
+			follow(e) {
+				let that = this;
+				if (!uni.getStorageSync('token')) {
+					uni.navigateTo({
+						url: '/pages/login/login'
+					});
+					return false;
+				}
+				request('Video/Follow/doFollow', {
+					followedUid: that.dataList[that.k].uid,
+					fanIt: 1
+				}).then(res => {
+					// console.log(res);
+					if (res.res == 13) {
+						uni.navigateTo({
+							url: '/pages/login/login'
+						});
+						return false;
+					}
+					// uni.showToast({title:res.msg,icon:'none'})
+					if (res.res == 1) {
+						that.dataList[that.k].is_fans_it = 1;
+					}
+				});
+				e.stopPropagation();
+			},
+			getData() {
+				this.$emit('loadMore', {
+					k: this.k
+				})
+			},
+			downLoadFile(videoItem) {
+				console.log('下载视频');
+				// 视频id
+				const videoId = videoItem.video_id || videoItem.videoId
+				// 视频网络路径
+				const videoUrl = videoItem.video;
+				if (!videoItem || !videoId || !videoUrl || this.downloadingList.includes(videoId)) {
+					return false
+				}
+				// 添加到正在下载的列表
+				this.downloadingList.push(videoId)
+				console.log('视频id:', videoId);
+				console.log('视频链接:', videoUrl);
+				console.log('视频所在项:', videoItem);
+
+				uni.getStorageInfo({
+					success: function(res) {
+						console.log('缓存的keys：', res.keys);
+					}
+				});
+				// 视频缓存数据
+				const videoStorage = uni.getStorageSync(`local_video_${videoId}`);
+				if (videoStorage) {
+					console.log('视频本地缓存：', videoStorage);
+					const videoData = JSON.parse(videoStorage)
+					// 读取视频文件
+					uni.getSavedFileInfo({
+						filePath: videoData.localPath,
+						success: (res) => {
+							if (this.currentVideoId != videoId) {
+								return this.$set(videoItem, 'lacalPath', videoData.localPath)
+							}
+						}
+					});
+				} else {
+					// 开始下载时间
+					let start_time = Date.now()
+					console.log('开始下载：', start_time);
+					let downloadTask = uni.downloadFile({
+						url: videoUrl,
+						success: (res) => {
+							if (res.statusCode === 200) {
+								// 结束下载时间
+								let end_time = Date.now()
+								console.log('下载成功:', end_time);
+								console.log('下载时长：' + (end_time - start_time) / 1000 + '秒');
+								// 保存文件到本地
+								uni.saveFile({
+									tempFilePath: res.tempFilePath,
+									success: (result) => {
+										// 本地视频路径
+										let savedFilePath = result.savedFilePath;
+										console.log('下载后视频key：', `local_video_${videoId}`);
+										console.log('下载后视频地址：', savedFilePath);
+										// 缓存视频信息
+										let storageData = {
+											videoId: videoId,
+											url: videoUrl,
+											localPath: savedFilePath,
+											downloadTime: Date.now() + '',
+											expirationTime: (Date.now() + 1000 * 60 * 60 * 24) + ''
+										}
+										uni.setStorage({
+											key: `local_video_${videoId}`,
+											data: JSON.stringify(storageData),
+											success: () => {
+												// 移除下载中
+												const dIndex = this.downloadingList.indexOf(videoId)
+												if (dIndex !== -1) {
+													this.downloadingList.splice(dIndex, 1)
+												}
+												if (this.currentVideoId != videoId) {
+													this.$set(videoItem, 'lacalPath', savedFilePath)
+												}
+											},
+											fail: (err) => {
+												console.log('本地缓存失败：', JSON.stringify(err));
+											}
+										});
+									},
+									fail: (err) => {
+										console.log('保存文件失败：', JSON.stringify(err));
+									}
+								});
+							}
+						},
+						fail: (err) => {
+							console.log('下载失败：', JSON.stringify(err));
+						}
+					});
+				}
+			},
+			scrollEnd(e) {
+				// console.log(e)
+				let originalIndex = this.k;
+				let isNext = false;
+				// 判断视频是下翻页还是上翻页，下翻为true
+				if (e.contentOffset.y < this.contentOffsetY) {
+					isNext = true;
+				}
+				// 滚动高度 ± 30是为了避免视频切换时滚动高度少于视频高度，导致实际视频索引跟列表视频对应不上，下翻时-30，上翻时+30
+				let y = e.contentOffset.y;
+				let otherH = 30;
+				if(isNext){
+					y -= otherH;
+				}else{
+					y += otherH;
+				}
+				let current = Math.floor(Math.abs(y) / (e.contentSize.height / this.list.length));
+				if(!isNext && e.contentOffset.y < 0 - otherH){
+					current++
+				}
+				if(originalIndex == current) return ;// 如果没有切换视频，阻止继续往下执行
+				// 期望快速滑动时，只执行最后一次代码
+				if(srcollLimit){
+					clearTimeout(srcollLimit)
+				}
+				srcollLimit = setTimeout(()=>{
+					this.dataList.forEach((item,i)=>{
+						if(i < current || i > current) this.dataList[i].playState = 'stop';
+					})
+					this.contentOffsetY = e.contentOffset.y;
+					// 当前视频位置（k） = 滚动高度 / （容器高度 / 视频数量）
+					this.$nextTick(()=>{
+						this.k = current
+					})
+					if (isNext) {
+						if (this.list.length - this.k <= 3) {
+							this.getData();
+						}
+					}
+					srcollLimit = null; // 清除定时器索引
+				},200)
+			},
+			playing() {
+				this.$set(this.dataList[this.k], 'playing', true)
+				// this.dataList[that.k].playing = true;
+				this.dataList.forEach((item) => {
+					item.playing = false;
+				})
+			}
+		}
+	};
+</script>
+
+<style>
+	@import '../../graceUI/graceWeex.css';
+	@import './shortvideo.css';
+</style>

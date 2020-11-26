@@ -1,0 +1,53 @@
+<template>
+	<cover-view class="heart-mark">
+		<image class="heart" :style="stylecss" src="../../static/img/index/xinActive.png" mode=""></image>
+	</cover-view>
+</template>
+
+<script>
+	export default {
+		props: ['hideCtrl'],
+		data(){
+			return {
+				stylecss: {}
+			}
+		},
+		created(){
+			setTimeout(()=>{
+				this.$parent[this.hideCtrl] = false;
+			},1000)
+			let count = 0;
+			let w = 50;
+			let opa = 1;
+			this.int = setInterval(()=>{
+				if(count < 15){
+					if(count > 5) opa -= 0.2; // 逐渐透明
+					w += 50; // 逐渐放大
+					this.stylecss = {
+						width: 50 + w + 'rpx',
+						height: 50 + w + 'rpx',
+						opacity: opa
+					}
+					count++;
+				}else{
+					clearInterval(this.int); // 动画完成后移除定时器
+				}
+			},60)
+		}
+	}
+</script>
+
+<style scoped>
+.heart-mark {
+	position: fixed;
+	width: 750rpx;
+	height: 1200rpx;
+	justify-content: center;
+	align-items: center;
+}
+.heart {
+	width: 100rpx;
+	height: 100rpx;
+	opacity: 1;
+}
+</style>

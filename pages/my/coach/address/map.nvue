@@ -1,0 +1,429 @@
+<template>
+	<div class="container" :style="{height: `${systemInfo.screenHeight}px`}">
+		<div :style="{height: `${systemInfo.statusBarHeight}px`}"></div>
+		<div class="title-view">
+			<text class="cancel-btn" @click="cancel">取消</text>
+			<text class="confirm-btn" @click="confirm">完成</text>
+		</div>
+		<div class="bottom-panel">
+			<div class="search">
+				<div class="bottom-item">
+					<div class="grace-search">
+						<div class="grace-search-in">
+							<image src="../../../../static/search.png" class="icon-search"></image>
+							<input class="ipt_txt" placeholder="搜索地点" v-model="keyword" type="text" confirm-type="search" @confirm="searchByKeyword" />
+						</div>
+					</div>
+				</div>
+			</div>
+			<list class="list">
+				<!-- 注意事项: 不能使用 index 作为 key 的唯一标识 -->
+				<cell class="bottom-item" v-for="(item, index) in address" :key="item.id" :ref="`cell${item.id}`" @click="addressClick(item)">
+					<div class="left">
+						<div class="left-top">
+							<text class="name">{{item.name}}</text>
+							<text class="tag" v-if="item.readonly">认证</text>
+						</div>
+						<text class="address">{{item.address}}</text>
+					</div>
+					<div class="right" v-if="selectAddress&&item.id==selectAddress.id">
+						<image class="right-image" src="../../../../static/right.png"></image>
+					</div>
+				</cell>
+			</list>
+		</div>
+		<div @touchstart="onTouchStart" @touchend="onTouchEnd" :style="{height: `${systemInfo.windowHeight-titleViewHeight-bottomViewHeight}px`,width:`${systemInfo.windowWidth}px`}">
+			<map class="map" id="map" ref="map" :scale="16" :style="{height: `${systemInfo.windowHeight-titleViewHeight-bottomViewHeight}px`,width:`${systemInfo.windowWidth}px`}"
+			 :latitude="latitude" :longitude="longitude" :markers="markers" :controls="controls" @tap="mapTap" @markertap="markertap" @controltap="controltap"></map>
+		</div>
+	</div>
+</template>
+
+<script>
+	const KEY = '0bc9df0d7a1b99fdfb28d53ad52d4d7a'
+	const dom = weex.requireModule('dom')
+	import { judgeIosPermission,gotoAppPermissionSetting,requestAndroidPermission } from "@/common/permission.js"
+	import { isIos,request } from "@/common/api.js"
+	export default {
+		data() {
+			return {
+				mapContext:null,
+				city:'广州',
+				myLatitude: 23.131446,// 我当前所在纬度
+				myLongitude: 113.320632,// 我当前所在经度
+				latitude: 23.131446,// 地图选中纬度
+				longitude: 113.320632,// 地图选中经度
+				markers: [],
+				controls:[],
+				address: [],
+				systemInfo: {},
+				keyword: '',
+				selectAddress:null,// 选中地址
+			}
+		},
+		computed: {
+			titleViewHeight() {
+				return uni.upx2px(88)
+			},
+			bottomViewHeight() {
+				return uni.upx2px(164 * 4)
+			}
+		},
+		onLoad() {
+			
+		},
+		onReady() {
+			this.initMap()
+		},
+		onBackPress() {
+			console.log('back')
+		},
+		beforeRouteLeave() {
+			console.log('beforeRouteLeave')
+		},
+		methods: {
+			// 初始化地图设置
+			initMap(){
+				try {
+					let _this = this
+					this.mapContext = uni.createMapContext('map',this)
+					// this.mapContext.$getAppMap().showUserLocation(true)
+					let systemInfo = uni.getSystemInfoSync();
+					this.systemInfo = systemInfo
+					// 添加地图控件
+					this.controls = [{
+						id:1,
+						position:{
+							left:(systemInfo.windowWidth - 30)/2,
+							top:(systemInfo.windowHeight-this.titleViewHeight-this.bottomViewHeight)/2 - 50,
+							width:30,
+							height:50
+						},
+						iconPath:'/static/dingwei.png',
+						clickable:true
+					}]
+					uni.getLocation({
+						type: 'gcj02',
+						geocode:true,
+						success: function(result) {
+							setTimeout(()=>{
+								_this.myLatitude = result.latitude
+								_this.myLongitude = result.longitude
+								_this.latitude = result.latitude
+								_this.longitude = result.longitude
+								_this.city = result.address.city
+								_this.searchByLianChe(_this.city)
+							},0)
+						},
+						fail:function(err){
+							if(isIos&&!judgeIosPermission('location')){
+								uni.showModal({
+									content:'定位权限未开启，无法获取当前位置，是否前往开启定位权限？',
+									success: (res) => {
+										if(res.confirm){
+											gotoAppPermissionSetting()
+										}
+									}
+								})
+							}else{
+								console.log('android无权限');
+								requestAndroidPermission('android.permission.ACCESS_COARSE_LOCATION')
+							}
+						}
+					});
+				} catch (e) {
+					console.log(e);
+				}
+			},
+			// 地图拖动开始
+			onTouchStart(){
+				this.tTime = Date.now()
+			},
+			// 地图拖动结束
+			onTouchEnd(){
+				if(Date.now()-this.tTime<100) return false
+				this.mapContext.getCenterLocation({
+					success: (result) => {
+						console.log(result);
+						this.latitude = result.latitude
+						this.longitude = result.longitude
+						this.searchByLianChe(this.city)
+					}
+				})
+			},
+			// 点击地图回调
+			async mapTap(e) {
+				console.log(e);
+				this.latitude = e.detail.latitude
+				this.longitude = e.detail.longitude
+				let addr = await this.regeo(this.longitude+','+this.latitude)
+				console.log(addr)
+				this.searchByLianChe(addr.regeocode.addressComponent.city)
+			},
+			// 点击标记点回调
+			markertap(e){
+				console.log(e)
+				const index = e.detail.markerId
+				const item = this.address[index]
+				console.log(item)
+				this.selectAddress = item
+				let key = `cell${item.id}`
+				const element = this.$refs[key][0];
+				dom.scrollToElement(element, {offset:0});
+			},
+			// 点击地图控件回调
+			controltap(e){
+				console.log(e)
+				switch(e.detail.id){
+					case 1:
+					this.latitude = this.myLatitude
+					this.longitude = this.myLongitude
+					break
+				}
+			},
+			// 选中地址
+			addressClick(item){
+				this.selectAddress = item
+			},
+			// 取消
+			cancel(){
+				this.$store.commit('setMapSelectAddress',null)
+				uni.navigateBack({
+					delta:1
+				})
+			},
+			// 完成
+			confirm(){
+				if(this.selectAddress){
+					this.$store.commit('setMapSelectAddress',this.selectAddress)
+				}
+				uni.navigateBack({
+					delta:1
+				})
+			},
+			// 官方训练场
+			searchByLianChe(city){
+				request('Train/TrainAdress/getGfTrainAdresses',{cityname:city}).then(async(res)=>{
+					console.log(res)
+					let result = res.data || []
+					result.forEach(item=>{
+						item['location'] = item.lng + ',' +item.lat
+						item['readonly'] = true
+					})
+					let pois = await this.searchByPoint(this.latitude+','+this.longitude)
+					this.address = result.concat(pois)
+					console.log(this.address);
+					this.addMarkers()
+				})
+			},
+			// 通过关键词搜索
+			searchByKeyword() {
+				console.log(this.keyword)
+				let params = {
+					key:KEY,
+					keywords:this.keyword,
+					output:'JOSN',
+					extensions:'all',
+					city:this.city,
+					offset:20
+				}
+				uni.request({
+				    url: 'https://restapi.amap.com/v3/place/text',
+				    data: params,
+				    success: (res) => {
+				        console.log(res.data);
+						uni.hideKeyboard()
+						this.address = res.data.pois
+						this.addMarkers()
+				    }
+				});
+			},
+			// 通过经纬度搜索
+			searchByPoint(location){
+				return new Promise((resolve,reject)=>{
+					let params = {
+						key:KEY,
+						location:location,
+						output:'JOSN',
+						extensions:'all',
+						offset:50,
+						// types:'141500',
+						radius:50000
+					}
+					uni.request({
+					    url: 'https://restapi.amap.com/v3/place/around',
+					    data: params,
+					    success: (res) => {
+					        console.log(res.data);
+							uni.hideKeyboard()
+							resolve(res.data.pois)
+							// this.address = res.data.pois
+							// this.addMarkers()
+					    },
+						fail: () => {
+							resolve([])
+						}
+					});
+				})
+			},
+			// 逆地理编码
+			regeo(location){
+				return new Promise((resolve, reject) => {
+					let params = {
+						key:KEY,
+						location:location,
+						output:'JOSN'
+					}
+					uni.request({
+					    url: 'https://restapi.amap.com/v3/geocode/regeo',
+					    data: params,
+					    success: (res) => {
+							resolve(res.data)
+					    },
+						fail: (err) => {
+							reject(err)
+						}
+					});
+				})
+			},
+			// 添加标记点
+			addMarkers(){
+				let markers = []
+				this.address.forEach((item,index)=>{
+					markers.push({
+						id:index,
+						latitude: parseFloat(item.location.split(',')[1]),
+						longitude: parseFloat(item.location.split(',')[0]),
+						iconPath: '/static/icons/weizhi.png',
+						width:22,
+						height:22,
+						callout:{
+							content:item.name,
+							borderRadius:5,
+							padding:5,
+							bgColor:'#191C2F',
+							color:'#FFFFFF'
+						}
+					})
+				})
+				this.markers = markers
+			}
+		}
+	}
+</script>
+
+<style>
+	.container {
+		width: 750rpx;
+		position: relative;
+		background-color: #191C2F;
+	}
+
+	.map {
+		width: 750rpx;
+		z-index: 999;
+	}
+
+	.title-view {
+		padding: 30rpx;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		height: 88rpx;
+		background-color: #191C2F;
+	}
+
+	.cancel-btn {
+		color: #FFFFFF;
+		font-size: 30rpx;
+	}
+
+	.confirm-btn {
+		color: #FFFFFF;
+		font-size: 30rpx;
+		background-color: #F6A704;
+		width: 112rpx;
+		height: 56rpx;
+		line-height: 56rpx;
+		text-align: center;
+		border-radius: 4rpx;
+	}
+
+	.bottom-panel {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		width: 750rpx;
+		background-color: #191C2F;
+	}
+
+	.bottom-item {
+		padding: 0 30rpx;
+		height: 164rpx;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		border-bottom-width:1rpx;
+		border-bottom-color: #2E3045;
+		border-bottom-style:solid;
+	}
+	
+	.left-top{
+		flex-direction: row;
+		justify-content: flex-start;
+		align-items: center;
+	}
+	
+	.right-image{
+		width: 46rpx;
+		height: 30rpx;
+	}
+
+	.grace-search {
+		padding: 0;
+		z-index: 999;
+	}
+
+	.grace-search-in {
+		padding: 0 44rpx;
+		height: 80rpx;
+		line-height: 80rpx;
+		background-color: #2E3045;
+		border-radius: 16rpx;
+	}
+
+	.ipt_txt {
+		width: 550rpx;
+		height: 80rpx;
+		color: #B3B3BB;
+		font-size: 30rpx;
+		margin-left: 24rpx;
+		/* background-color: #F6A704; */
+	}
+
+	.icon-search {
+		width: 30rpx;
+		height: 30rpx;
+	}
+
+	.list {
+		height: 492rpx;
+	}
+	
+	.name,.tag{
+		color: #FFFFFF;
+		font-size: 30rpx;
+	}
+	.tag{
+		margin-left: 8rpx;
+		padding: 5rpx;
+		font-size: 28rpx;
+		background-color: #F6A704;
+		border-radius: 4rpx;
+	}
+	.address{
+		color: #B3B3BB;
+		font-size: 26rpx;
+		margin-top: 20rpx;
+	}
+</style>
